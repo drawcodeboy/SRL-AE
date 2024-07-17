@@ -1,0 +1,11 @@
+# Virtual Envirionment for CPU
+.venv
+
+# Study Folder for LSTM
+.study_LSTM
+
+# pycache
+**/__pycache__/**
+
+# vscode
+.vscode
