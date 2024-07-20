@@ -47,5 +47,6 @@ if __name__ == '__main__':
     summary(model, input_size=(32, 160, 1)) # (Batch Size, Seq Len, Input Dim)
     
     input_t = torch.randn(4, 10, 1)
-    h_n = model(input_t)
-    print(h_n.shape)
+    x, h_n = model(input_t)
+    print(x)
+    print(h_n)
