@@ -26,8 +26,8 @@ class Encoder(nn.Module):
             self.lstm_layers.append(layer)
     
     def forward(self, x):
-        for layer in self.lstm_layers:
-            x, (h_n, c_n) = layer(x)
+        for lstm in self.lstm_layers:
+            x, (h_n, c_n) = lstm(x)
             
         # Decoder에서 Sequence Length만큼 repeat시킨다.
         # 이를 위해 Encoder에서는 마지막 LSTM layer에서 Hidden State를 넘겨주도록 한다.
