@@ -33,7 +33,7 @@ class Decoder(nn.Module):
         self.tdm = nn.Parameter(
             torch.empty((self.layers_dim[-1], output_dim), dtype=torch.float32, requires_grad=True)
         )
-            
+        
     def forward(self, x, seq_len):
         # Repeat Hidden State
         # (Batch Size, 1, Vector Dim) -> (Batch Size, Seq Len, Vector Dim)
