@@ -29,6 +29,11 @@ class Encoder(nn.Module):
         for lstm in self.lstm_layers:
             x, (h_n, c_n) = lstm(x)
             
+        # nn.LSTM in PyTorch Docs
+        # Note that this does not apply to hidden or cell states. See the Inputs/Outputs sections below for details.
+        # batch_first=True가 cell state와 hidden state에는 적용되지 않는다는 의미이다.
+        h_n = h_n.permute(1, 0, 2) # (1, batch_size, vec_dim) => (batch_size, 1, vec_dim)
+            
         # Decoder에서 Sequence Length만큼 repeat시킨다.
         # 이를 위해 Encoder에서는 마지막 LSTM layer에서 Hidden State를 넘겨주도록 한다.
         return h_n
@@ -41,7 +46,6 @@ if __name__ == '__main__':
     from torchinfo import summary # for LSTM
     summary(model, input_size=(32, 160, 1)) # (Batch Size, Seq Len, Input Dim)
     
-    input_t = torch.randn(1, 10, 1)
+    input_t = torch.randn(4, 10, 1)
     h_n = model(input_t)
-    print(h_n)
     print(h_n.shape)
