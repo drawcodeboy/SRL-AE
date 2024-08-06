@@ -21,7 +21,7 @@ class PTB_XL_Dataset(Dataset):
             raise AssertionError('Extenstion이 존재')
         
         sample = wfdb.rdsamp(data_path)
-                
+        
         fig, axes = wfdb.plot.plot_items(signal=sample[0],
                                          title=f'PTB-XL Record {data_path[-8:-3]}',
                                          # sig_name=sample[1]['sig_name'],
@@ -48,9 +48,10 @@ class PTB_XL_Dataset(Dataset):
             axes[i].grid(linestyle='-.', axis='x')
         plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0., hspace=0.) # Lead 간 간격 붙이기
         plt.show()
+        
 
 if __name__ == '__main__':
-    sample_path = r"E:\ECG_AD\data\PTB-XL\records100\00000\00002_lr"
+    sample_path = r"E:\ECG_AD\data\PTB-XL\records100\00000\00154_lr"
     sample = wfdb.rdsamp(sample_path) 
     # sample = Tuple[np.ndarray, Dict]
     # sample[0] = np.ndarray, (sig_len, n_sig)
