@@ -2,10 +2,11 @@ from torch.utils.data import Dataset
 import os
 import wfdb
 from matplotlib import pyplot as plt
+import pandas as pd
 
 class PTB_XL_Dataset(Dataset):
-    def __init__(self, data_dir, mode):
-        pass
+    def __init__(self, data_dir: str, metadata: pd.DataFrame, mode: str='train'):
+        self.metadata = metadata
     
     def _check_and_load(self, mode):
         '''
