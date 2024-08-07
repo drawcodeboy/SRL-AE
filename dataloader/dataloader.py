@@ -1,11 +1,17 @@
+import torch
 from torch.utils.data import Dataset
+
 import os, sys, time
+import pandas as pd
+import numpy as np
+
 import wfdb
+from wfdb.processing import normalize_bound
 import json
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import pandas as pd
-import numpy as np
+from scipy.signal import butter, lfilter
+
 from typing import Dict
 
 class PTB_XL_Dataset(Dataset):
@@ -38,6 +44,62 @@ class PTB_XL_Dataset(Dataset):
     
     def __len__(self):
         return len(self.data_li)
+    
+    def __getitem__(self, idx):
+        # (1) 0.5Hz ~ 40Hz Bandpass filtering
+        # (2) 0-1 Normalization
+        
+        sample = wfdb.rdsamp(self.data_li[idx][0])
+        target = self.data_li[idx][1]
+        
+        sample = PTB_XL_Dataset.preprocess(sample)
+        
+        # target은 tensor로 변환 될 필요 X
+        # input tensor(ECG) shape = (seq_len, dim)
+        ecg_record = torch.tensor(sample[0], dtype=torch.float32)
+        
+        return ecg_record, target
+    
+    @staticmethod
+    def preprocess(sample):
+        ecg_record = []
+        for channel in range(sample[0].shape[1]): # 12 channels
+            ecg_lead = sample[0][:, channel]
+            
+            # Bandpass filtering
+            ecg_lead = PTB_XL_Dataset.butter_bandpass_filter(ecg_lead, 
+                                                             0.5, 40, sample[1]['fs'])
+            
+            # 0-1 Normalization
+            ecg_lead = normalize_bound(ecg_lead, 0., 1.)
+            
+            ecg_record.append(ecg_lead)
+            
+        # 위 과정을 수행하면서 shape이 transpose로 바뀌었음
+        sample = (np.array(ecg_record, dtype=np.float32).T, sample[1])
+        
+        return sample
+    
+    @staticmethod
+    def butter_bandpass(lowcut, highcut, fs, order):
+        '''
+        Args:
+            lowcut
+            highcut
+            fs: Sampling Rate
+            ordrer: 깎는 정도, 높을수록 급격하게 깎아냄.
+        '''
+        nyq = 0.5 * fs # 나이퀴스트 주파수: fs의 절반
+        low = lowcut / nyq
+        high = highcut / nyq
+        b, a = butter(order, [low, high], btype='bandpass') # 필터 계수 구함
+        return b, a
+    
+    @staticmethod
+    def butter_bandpass_filter(sample, lowcut, highcut, fs, order=5):
+        b, a = PTB_XL_Dataset.butter_bandpass(lowcut, highcut, fs, order=order)
+        y = lfilter(b, a, sample) # 주어진 필터 계수를 통해 필터링
+        return y
     
     def _mode_transform(self):
         # Normal Data들이 맨 앞에 오게 정렬
@@ -112,11 +174,15 @@ class PTB_XL_Dataset(Dataset):
         print(f"\nCheck & Load data time: {load_time//60}m {load_time%60}s")
     
     @staticmethod
-    def visualize(data_path):
+    def visualize(data_path, preprocess=False):
         if os.path.splitext(data_path)[1] != '':
             raise AssertionError('Extenstion이 존재')
         
         sample = wfdb.rdsamp(data_path)
+        
+        if preprocess == True:
+            plt.figure(2) # 여러 창 띄울 때도 있음. original은 Figure 1, preprocess는 Figure 2
+            sample = PTB_XL_Dataset.preprocess(sample)
         
         fig, axes = wfdb.plot.plot_items(signal=sample[0],
                                          title=f'PTB-XL Record {data_path[-8:-3]}',
@@ -148,7 +214,6 @@ class PTB_XL_Dataset(Dataset):
             axes[i].grid(linestyle='-.', which='minor', axis='x')
             
         plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0., hspace=0.) # Lead 간 간격 붙이기
-        plt.show()
         
 
 if __name__ == '__main__':
@@ -165,31 +230,15 @@ if __name__ == '__main__':
     print(len(train_ds), len(test_ds))
     '''
     
-    # 중복 확인 (확인 됨)
-    '''
-    train_li, test_li = [], []
-    for file_path, v in train_ds.data_li:
-        train_li.append(int(file_path[-8:-3]))
-        if v != 0: # 정상 데이터만 있는지 확인 (확인 됨)
-            print('abnormal..')
-            
-    for file_path, v in test_ds.data_li:
-        test_li.append(int(file_path[-8:-3]))
-        
-    for value in train_li:
-        if value in test_li:
-            print('duplicate..')
-            
-    
-    sys.exit()
-    '''
+    train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
+                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+                              mode='train')
+    ecg, target = train_ds[0]
+    print(ecg.shape, target)
     
     # 시각화 실험
     sample_path = r"E:\ECG_AD\data\PTB-XL\records100\00000\00154_lr"
-    sample = wfdb.rdsamp(sample_path) 
-    # sample = Tuple[np.ndarray, Dict]
-    # sample[0] = np.ndarray, (sig_len, n_sig)
-    # sample[1] = Dict
     
-    print(sample[0].shape, [k for k in sample[1].keys()])
-    PTB_XL_Dataset.visualize(sample_path)
+    PTB_XL_Dataset.visualize(sample_path, preprocess=False)
+    PTB_XL_Dataset.visualize(sample_path, preprocess=True)
+    plt.show()
