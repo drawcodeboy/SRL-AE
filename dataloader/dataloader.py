@@ -10,6 +10,7 @@ from wfdb.processing import normalize_bound
 import json
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import scipy
 from scipy.signal import butter, lfilter
 
 from typing import Dict
@@ -70,9 +71,31 @@ class PTB_XL_Dataset(Dataset):
             ecg_lead = PTB_XL_Dataset.butter_bandpass_filter(ecg_lead, 
                                                              0.5, 40, sample[1]['fs'])
             
-            # 0-1 Normalization
-            ecg_lead = normalize_bound(ecg_lead, 0., 1.)
+            # Scaling
             
+            # (1) 0-1 Normalization (필터링 직후, 바로 normalization -> 0Hz에서 peak 문제 발생)
+            # 원인 분석: Min-Max Scaling은 신호의 스케일을 다시 0에서 1로 되돌려 놓고,
+            # DC 성분(0Hz)가 재도입된다. 그렇기 때문에 Min-Max Scaling을 피해야 한다.
+            # Standardization을 쓰도록 하자. 이게 나쁜 이유에서가 아니라 단지 시각화 했을 때, DC 성분을
+            # 지우는 방법이 막연하게 다른 정규화 방법을 쓰는 것 뿐이었기 때문이다.
+            # ecg_lead = normalize_bound(ecg_lead, 0., 1.)
+            
+            # (2) Standardization
+            # DC 성분은 다시 재도입되지 않았지만, 분산을 1로 맞추는 과정에서
+            # ECG 자체가 진폭이 원래 낮다보니 Standardization 이후의 진폭이
+            # 더 커지는 현상이 발생한다. (오히려 좋은 거 아닌가, 변동성도 더 확실하고..)
+            # 그렇다기엔 Lead마다 범위가 다른 문제 발생
+            # ecg_lead = (ecg_lead - np.mean(ecg_lead)) / np.std(ecg_lead)
+            
+            # (3) MaxAbs Scaling
+            # 이걸 적용한 후에 Visualize를 하면, 사실상 범위 변화에 있어서 큰 차이는 없으나
+            # lead 간의 범위를 통일하는데 있어서 큰 의미가 있다.
+            ecg_lead_abs = np.abs(ecg_lead)
+            max_abs = np.max(ecg_lead_abs)
+            
+            if max_abs != 0.:
+                ecg_lead = ecg_lead / max_abs
+                
             ecg_record.append(ecg_lead)
             
         # 위 과정을 수행하면서 shape이 transpose로 바뀌었음
@@ -215,7 +238,32 @@ class PTB_XL_Dataset(Dataset):
             
         plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0., hspace=0.) # Lead 간 간격 붙이기
         
-
+    @staticmethod
+    def visualize_freq(data_path, lead=1, preprocess=False, fig_num=1):
+        if os.path.splitext(data_path)[1] != '':
+            raise AssertionError('Extenstion이 존재')
+        
+        if lead < 1 or lead > 12:
+            raise AssertionError('Lead가 정말 그만큼 적거나 많을까? 진짜로?')
+        
+        sample = wfdb.rdsamp(data_path)
+        plt.figure(fig_num) 
+        
+        if preprocess == True:
+            sample = PTB_XL_Dataset.preprocess(sample)
+            
+        N = sample[1]['sig_len']
+        
+        T = 1.0 / sample[1]['fs']
+        
+        x = np.linspace(0., N*T, N)
+        y = sample[0][:, lead]
+        
+        yf = scipy.fftpack.fft(y)
+        xf = np.linspace(0., 1./(2.*T), N//2)
+        
+        plt.plot(xf, 2.0/N * np.abs(yf[:N//2]))
+        
 if __name__ == '__main__':
     # Train, Test 실험
     '''
@@ -230,15 +278,21 @@ if __name__ == '__main__':
     print(len(train_ds), len(test_ds))
     '''
     
+    '''
     train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
                               metadata_path='data/PTB-XL/ptbxl_database.csv',
                               mode='train')
     ecg, target = train_ds[0]
     print(ecg.shape, target)
+    '''
     
     # 시각화 실험
     sample_path = r"E:\ECG_AD\data\PTB-XL\records100\00000\00154_lr"
     
     PTB_XL_Dataset.visualize(sample_path, preprocess=False)
     PTB_XL_Dataset.visualize(sample_path, preprocess=True)
+    
+    # PTB_XL_Dataset.visualize_freq(sample_path, preprocess=False, fig_num=1)
+    # PTB_XL_Dataset.visualize_freq(sample_path, preprocess=True, fig_num=2)
+    
     plt.show()
