@@ -278,13 +278,14 @@ if __name__ == '__main__':
     print(len(train_ds), len(test_ds))
     '''
     
-    '''
+    
     train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
                               metadata_path='data/PTB-XL/ptbxl_database.csv',
                               mode='train')
     ecg, target = train_ds[0]
     print(ecg.shape, target)
-    '''
+    sys.exit()
+    
     
     # 시각화 실험
     sample_path = r"E:\ECG_AD\data\PTB-XL\records100\00000\00154_lr"

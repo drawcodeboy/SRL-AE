@@ -11,10 +11,12 @@ class ResLSTMCell(nn.Module):
     '''
     def __init__(self, input_size, hidden_size, proj_size=0):
         super(ResLSTMCell, self).__init__()
+        
+        proj_size = hidden_size if proj_size == 0 else proj_size
                 
-        self.register_buffer('input_size', torch.Tensor([input_size]))
-        self.register_buffer('hidden_size', torch.Tensor([hidden_size]))
-        self.register_buffer('proj_size', torch.Tensor([hidden_size if proj_size == 0 else proj_size]))
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.proj_size = proj_size
         
         # Input, Forget Gate의 가중치를 붙여서 한 번의 연산으로 구하도록 한 것
         # 대신 가독성은 떨어짐.
@@ -48,6 +50,7 @@ class ResLSTMCell(nn.Module):
             - hidden: Tuple[torch.Tensor, torch.Tensor]
             
             Returns:
+                - Output Sequence, (n-th Hidden State, n-th Cell State)
                 - Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]
         '''
         pre_output = input if pre_output is None else pre_output
@@ -112,8 +115,7 @@ class ResLSTM(nn.Module):
     def forward(self, input, hidden=None, pre_output=None):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         
-        inputs = input.unbind(-2)
-        print(len(inputs))
+        inputs = input.unbind(-2) # Sequence를 각 Seq의 element를 담은 tuple로 변환
         outputs = []
         
         pre_output = input if pre_output is None else pre_output
@@ -131,7 +133,11 @@ class ResLSTM(nn.Module):
         if self.batch_first:
             outputs = outputs.permute(1, 0, 2) # (seq_len, bz, dim) -> (bz, seq_len, dim)
         
-        return outputs, hidden
+        # nn.LSTM처럼 맨 앞에 dim=1 추가해서 리턴
+        h_n = hidden[0].unsqueeze(0)
+        c_n = hidden[1].unsqueeze(0)
+        
+        return outputs, (h_n, c_n)
     
 if __name__ == '__main__':
     cell = ResLSTMCell(input_size=3, hidden_size=5, proj_size=4)
@@ -144,7 +150,8 @@ if __name__ == '__main__':
     
     model = ResLSTM(input_size=3, hidden_size=5, proj_size=4, batch_first=True)
     
-    x = torch.randn(2, 20, 3)
-    output, h_n = model(x)
+    x = torch.randn(16, 20, 3)
+    output, (h_n, c_n) = model(x)
     
     print(output.shape)
+    print(h_n.shape, c_n.shape)
