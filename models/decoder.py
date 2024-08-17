@@ -15,7 +15,8 @@ class Decoder(nn.Module):
                  hidden_dims=[8, 16, 32, 64],
                  lstm_type:str='plain',
                  connect:str='none',
-                 num_attn_heads:Optional[int]=None):
+                 num_attn_heads:Optional[int]=None,
+                 dropout:float=0.2):
         '''
         hidden_dims[0]: 맨 처음 input dim
         '''
@@ -55,6 +56,9 @@ class Decoder(nn.Module):
             torch.empty((self.layers_dim[-1], output_dim), dtype=torch.float32, requires_grad=True)
         )
         
+        self.tanh = nn.Tanh()
+        self.dropout = nn.Dropout(p=dropout)
+        
     def forward(self, x, seq_len, skip):
         # Repeat Hidden State
         # (Batch Size, 1, Vector Dim) -> (Batch Size, Seq Len, Vector Dim)
@@ -62,6 +66,7 @@ class Decoder(nn.Module):
 
         for idx, lstm in enumerate(self.lstm_layers):
             x, (h_n, c_n) = lstm(x)
+            x = self.dropout(x)
             
             if self.connect == 'none':
                 pass
@@ -73,6 +78,8 @@ class Decoder(nn.Module):
                 # Encoder의 output을 value로 도출한다는 의미로
                 # Query, Key, Value를 다음과 같이 배치
                 x, _ = self.attn_li[idx](x, skip[idx], skip[idx])
+                
+            x = self.tanh(x)
         
         x = x @ self.tdm
         return x

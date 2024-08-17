@@ -13,7 +13,8 @@ class Encoder(nn.Module):
                  input_dim=1,
                  hidden_dims=[64, 32, 16, 8],
                  lstm_type:str='plain',
-                 connect:bool=False):
+                 connect:bool=False,
+                 dropout:float=0.2):
         super().__init__()
         
         self.num_layers = num_layers
@@ -36,12 +37,17 @@ class Encoder(nn.Module):
                     batch_first=True,
                 )
             self.lstm_layers.append(layer)
+            
+        self.tanh = nn.Tanh()
+        self.dropout = nn.Dropout(p=dropout)
     
     def forward(self, x):
         connection_li = []
         
         for idx, lstm in enumerate(self.lstm_layers):
             x, (h_n, c_n) = lstm(x)
+            x = self.dropout(x)
+            x = self.tanh(x)
             
             if self.connect == True and idx != len(self.lstm_layers)-1:
                 connection_li.append(x)

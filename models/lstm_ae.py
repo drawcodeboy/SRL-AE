@@ -14,7 +14,8 @@ class LSTMAutoencoder(nn.Module):
                  encoder_lstm_type:str='plain',
                  decoder_lstm_type:str='plain',
                  connect:str='none',
-                 num_attn_heads:Optional[int]=None):
+                 num_attn_heads:Optional[int]=None,
+                 dropout=0.2):
         '''
         Args:
             - num_layers: Encoder와 Decoder의 Layer depth
@@ -55,14 +56,16 @@ class LSTMAutoencoder(nn.Module):
                                input_dim=in_out_dim,
                                hidden_dims=hidden_dims,
                                lstm_type=encoder_lstm_type,
-                               connect=is_connection)
+                               connect=is_connection,
+                               dropout=dropout)
         
         self.decoder = Decoder(num_layers=num_layers,
                                output_dim=in_out_dim,
                                hidden_dims=hidden_dims[::-1],
                                lstm_type=decoder_lstm_type,
                                connect=connect,
-                               num_attn_heads=num_attn_heads)
+                               num_attn_heads=num_attn_heads,
+                               dropout=dropout)
     
     def forward(self, x):
         seq_len = x.shape[1]
