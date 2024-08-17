@@ -24,9 +24,8 @@ class ResLSTMCell(nn.Module):
         self.weight_ih = nn.Parameter(torch.randn(2 * hidden_size, proj_size))
         self.weight_ic = nn.Parameter(torch.randn(2 * hidden_size, hidden_size))
         
-        self.bias_ii = nn.Parameter(torch.randn(2 * hidden_size))
-        self.bias_ih = nn.Parameter(torch.randn(2 * hidden_size))
-        self.bias_ic = nn.Parameter(torch.randn(2 * hidden_size))
+        self.bias_ii = nn.Parameter(torch.randn(1 * hidden_size))
+        self.bias_if = nn.Parameter(torch.randn(1 * hidden_size))
         
         # Cell Gate
         self.weight_ci = nn.Parameter(torch.randn(1 * hidden_size, input_size))
@@ -61,13 +60,16 @@ class ResLSTMCell(nn.Module):
         # Cell State까지 Gate를 만드는 연산에 포함시키는 것은
         # 해당 LSTM이 Peephole LSTM이라 그럼
         # 즉, 아래 코드는 forget, input, output gate를 만들기 위함인 것
-        if_gates = (torch.matmul(input, self.weight_ii.t()) + self.bias_ii +
-                     torch.matmul(hx, self.weight_ih.t()) + self.bias_ih +
-                     torch.matmul(cx, self.weight_ic.t()) + self.bias_ic)
+        if_gates = (torch.matmul(input, self.weight_ii.t()) + 
+                     torch.matmul(hx, self.weight_ih.t()) + 
+                     torch.matmul(cx, self.weight_ic.t()))
         
         # (bz, cell_state), (bz, cell_state) = (bz, 2*cell_state)
         ingate, forgetgate = if_gates.chunk(2, -1) 
         
+        ingate = ingate + self.bias_ii
+        forgetgate = forgetgate + self.bias_if
+                
         # Cell Gate (Peephole LSTM 수식보면 여기는 이전 Cell state가 들어가지 않음.)
         cellgate = (torch.matmul(input, self.weight_ci.t()) + 
                     torch.matmul(hx, self.weight_ch.t()) + self.bias_c)
@@ -142,16 +144,26 @@ class ResLSTM(nn.Module):
 if __name__ == '__main__':
     cell = ResLSTMCell(input_size=3, hidden_size=5, proj_size=4)
         
-    x = torch.randn(1, 3)
-    hidden_state = torch.randn(1, 4)
-    cell_state = torch.randn(1, 5)
+    x = torch.randn(20, 3)
+    hidden_state = torch.randn(20, 4)
+    cell_state = torch.randn(20, 5)
     
     cell(x, (hidden_state, cell_state))
     
-    model = ResLSTM(input_size=3, hidden_size=5, proj_size=4, batch_first=True)
+    model1 = ResLSTM(input_size=2, hidden_size=4, batch_first=True)
+    model2 = nn.LSTM(input_size=2, hidden_size=4, batch_first=True)
     
-    x = torch.randn(16, 20, 3)
-    output, (h_n, c_n) = model(x)
+    p_sum = 0
+    for p in model1.parameters():
+        p_sum += p.numel()
+    print(f"resLSTM: {p_sum}")
     
-    print(output.shape)
-    print(h_n.shape, c_n.shape)
+    p_sum = 0
+    for p in model2.parameters():
+        p_sum += p.numel()
+    print(f"nn.LSTM: {p_sum}")
+    # x = torch.randn(16, 20, 3)
+    # output, (h_n, c_n) = model(x)
+    
+    # print(output.shape)
+    # print(h_n.shape, c_n.shape)
