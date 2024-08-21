@@ -146,14 +146,15 @@ class PTB_XL_Dataset(Dataset):
         self.data_li.sort(key=lambda x: x[1]) # inplace-sort
         
         # Train 데이터의 수 구하기
-        train_cnt = len(self.data_li) - 2*self.abnormal_cnt - 100 # Total-Test-Val
+        val_cnt = 100 # 전부 돌아가는지 디버깅할 때는 10으로 낮춰서 할 것
+        train_cnt = len(self.data_li) - 2*self.abnormal_cnt - val_cnt # Total-Test-Val
         
         if self.mode == 'train':
             self.data_li = self.data_li[:train_cnt]
         elif self.mode == 'val':
-            self.data_li = self.data_li[train_cnt:train_cnt+100]
+            self.data_li = self.data_li[train_cnt:train_cnt+val_cnt]
         elif self.mode == 'test':
-            self.data_li = self.data_li[train_cnt+100:]
+            self.data_li = self.data_li[train_cnt+val_cnt:]
     
     def _check_pure_likelihood(self, label_dict: Dict):
         # Sample의 Label Dictionary를 통해서 순수한 Label을 가진
@@ -182,6 +183,7 @@ class PTB_XL_Dataset(Dataset):
         start_time = time.time()
         filename = 'filename_lr' if self.freq == 100 else 'filename_hr'
         for idx, (file_path, target_dict) in enumerate(zip(self.metadata[filename], self.metadata['scp_codes'])):
+            # if idx == 50: break # Test용 코드
             print(f"\r[{self.mode}] Check & Load data: {100*idx/len(self.metadata):.2f}%", end='')
             
             file_path = os.path.join(self.data_dir, file_path)

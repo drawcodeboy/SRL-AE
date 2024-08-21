@@ -13,3 +13,7 @@
 # data
 data/
 !data/temp.txt
+
+# saved
+saved/losses/
+saved/weights/

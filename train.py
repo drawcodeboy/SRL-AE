@@ -39,7 +39,7 @@ def get_args_parser():
     return parser
 
 def print_setup(device, args):
-    print("########[Settings]########")
+    print("======================[Settings]========================")
     print(f"\n  [GPU]")
     print(f"  |-[device]: {device}")
     print(f"\n  [MODEL]")
@@ -53,7 +53,10 @@ def print_setup(device, args):
     print(f"  |-[lr]: {args.lr}")
     print(f"  |-[weight decay]: {args.weight_decay}")
     print(f"  |-[batch size]: {args.batch_size}")
-    print("\n##########################")
+    print(f"\n [SAVE PATHS]")
+    print(f"  |-[SAVE WEIGHTS DIR]: {args.save_weights_dir}")
+    print(f"  |-[SAVE LOSSES DIR]: {args.save_losses_dir}")
+    print("\n======================================================")
     
 def main(args):
     device = 'cpu'
@@ -73,6 +76,7 @@ def main(args):
                               mode='train',
                               freq=args.freq,
                               seconds=args.seconds)
+    print(f"train samples: {len(train_ds)}")
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
     
     val_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
@@ -80,6 +84,7 @@ def main(args):
                               mode='val',
                               freq=args.freq,
                               seconds=args.seconds)
+    print(f"validation samples: {len(val_ds)}")
     val_dl = DataLoader(val_ds, shuffle=True, batch_size=args.batch_size)
     
     # Loss Function (Reconstruction Loss: MAE Loss)
@@ -106,16 +111,22 @@ def main(args):
         current_epoch += 1
         print("======================================================")
         print(f"Epoch: [{current_epoch:03d}/{args.epochs:03d}]")
+        print()
         
         # Training One Epoch
         start_time = int(time.time())
         train_loss = train_one_epoch(current_epoch, model, train_dl, optimizer, loss_fn, scheduler, device)
         train_time = int(time.time() - start_time)
         print(f"Training Time: {train_time//60:02d}m {train_time%60:02d}s")
+        print()
         
         # Validation
         start_time = int(time.time())
         val_loss, _, _ = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값, threshold 리턴
+        val_time = int(time.time()) - start_time
+        print(f"Validation Reconstruction Loss: {val_loss:.6f}")
+        print(f"Validation Time: {val_time//60:02d}m {val_time%60:02d}s")
+        print()
         
         if val_loss < min_val_loss:
             min_val_loss = val_loss

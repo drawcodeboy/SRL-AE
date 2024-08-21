@@ -23,7 +23,7 @@ def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, dev
         loss.backward()
         optimizer.step()
         
-        print(f"\rTraining: {100*batch_idx/len(dataloader):.2f}%, Loss: {loss.item():.6f}, LR: {scheduler.get_last_lr()[0]:.8f}", end="")
+        print(f"\rTraining: {100*batch_idx/len(dataloader):.2f}%, Loss: {sum(total_loss)/len(total_loss):.6f}, LR: {scheduler.get_last_lr()[0]:.8f}", end="")
     print()
         
     return sum(total_loss)/len(total_loss) # One Epoch Mean Loss
@@ -47,6 +47,7 @@ def validate(model, dataloader, loss_fn, scheduler, device, threshold_method=1):
         
         total_loss.extend(loss.tolist())
         print(f"\rValidate: {100*batch_idx/len(dataloader):.2f}%", end="")
+    print()
     
     total_loss = np.array(total_loss)
     
