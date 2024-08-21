@@ -1,38 +1,58 @@
 import torch
 from torch import nn
+from torch import optim
 from torch.utils.data import Dataset, DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import argparse
+import time
 from typing import Optional
 
 from models import load_model
 from dataloader import PTB_XL_Dataset
+from utils import *
 
 def get_args_parser():
     parser = argparse.ArgumentParser(add_help=False)
     
+    # GPU
     parser.add_argument("--use-cuda", action='store_true')
     
+    # Model
     parser.add_argument("--model", default='LSTM-AE')
     parser.add_argument("--num-attn-heads", type=Optional[int], default=None)
     
+    # Dataset
     parser.add_argument("--freq", type=int, default=500)
     parser.add_argument("--seconds", type=int, default=2)
     
+    # Hyperparameters
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--batch-size", type=int, default=16)
-        
+    
+    # Save Paths
+    parser.add_argument("--save-weights-dir", default="saved/weights")
+    parser.add_argument("--save-losses-dir", default="saved/losses")
+    
     return parser
 
 def print_setup(device, args):
-    print("########[Settings]########\n")
-    print(f"  [device]: {device}")
-    print(f"  [model]: {args.model}")
-    print(f"  [num-attn-heads]: {args.num_attn_heads}")
-    print(f"  [epochs]: {args.epochs}")
-    print(f"  [lr]: {args.lr}")
-    print(f"  [batch size]: {args.batch_size}")
+    print("########[Settings]########")
+    print(f"\n  [GPU]")
+    print(f"  |-[device]: {device}")
+    print(f"\n  [MODEL]")
+    print(f"  |-[model]: {args.model}")
+    print(f"  |-[num-attn-heads]: {args.num_attn_heads}")
+    print(f"\n  [DATA]")
+    print(f"  |-[freq]: {args.freq}")
+    print(f"  |-[seconds]: {args.seconds}")
+    print(f"\n  [HYPERPARAMETERS]")
+    print(f"  |-[epochs]: {args.epochs}")
+    print(f"  |-[lr]: {args.lr}")
+    print(f"  |-[weight decay]: {args.weight_decay}")
+    print(f"  |-[batch size]: {args.batch_size}")
     print("\n##########################")
     
 def main(args):
@@ -45,7 +65,7 @@ def main(args):
     
     # Load Model
     model = load_model(model_name=args.model,
-                       num_attn_heads=args.num_attn_heads)
+                       num_attn_heads=args.num_attn_heads).to(device)
     
     # Load Dataset
     train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
@@ -55,12 +75,53 @@ def main(args):
                               seconds=args.seconds)
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
     
-    sample = next(iter(train_dl))
-    print(sample.shape)  
+    val_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
+                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+                              mode='val',
+                              freq=args.freq,
+                              seconds=args.seconds)
+    val_dl = DataLoader(val_ds, shuffle=True, batch_size=args.batch_size)
+    
     # Loss Function (Reconstruction Loss: MAE Loss)
-    # loss_fn = nn.MAELoss()
+    loss_fn = nn.L1Loss()
     
     # Optimizer
+    p = [p for p in model.parameters() if p.requires_grad]
+    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    
+    # Scheduler
+    scheduler = ReduceLROnPlateau(optimizer,
+                                 mode='min',
+                                 factor=0.5,
+                                 patience=5,
+                                 min_lr=1e-7)
+    
+    total_train_loss = []
+    total_val_loss = []
+    
+    min_train_loss = 10000.
+    min_val_loss = 10000.
+    
+    for current_epoch in range(0, args.epochs):
+        current_epoch += 1
+        print("======================================================")
+        print(f"Epoch: [{current_epoch:03d}/{args.epochs:03d}]")
+        
+        # Training One Epoch
+        start_time = int(time.time())
+        train_loss = train_one_epoch(current_epoch, model, train_dl, optimizer, loss_fn, scheduler, device)
+        train_time = int(time.time() - start_time)
+        print(f"Training Time: {train_time//60:02d}m {train_time%60:02d}s")
+        
+        # Validation
+        start_time = int(time.time())
+        val_loss, _, _ = validate(current_epoch, model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값 리턴
+        
+        if val_loss < min_val_loss:
+            min_val_loss = val_loss
+            save_model_ckpt(model, args.model, current_epoch, args.save_weights_dir)
+        
+        save_loss_ckpt(model, current_epoch, total_train_loss, total_val_loss, args.save_losses_dir)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('ECG Anomaly Detection', parents=[get_args_parser()])
