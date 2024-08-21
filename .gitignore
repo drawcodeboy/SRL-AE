@@ -4,6 +4,9 @@
 # pycache
 **/__pycache__/**
 
+# IPython
+**/.ipynb_checkpoints/**
+
 # vscode
 .vscode
 

@@ -16,7 +16,12 @@ from scipy.signal import butter, lfilter
 from typing import Dict
 
 class PTB_XL_Dataset(Dataset):
-    def __init__(self, data_dir: str, metadata_path: pd.DataFrame, mode: str='train'):
+    def __init__(self, 
+                 data_dir: str, 
+                 metadata_path: pd.DataFrame, 
+                 mode: str='train',
+                 freq: int=100,
+                 seconds: int=2):
         '''
         Args:
             - data_dir: record100 or record500 직전의 부모 디렉터리의 위치
@@ -30,13 +35,20 @@ class PTB_XL_Dataset(Dataset):
         if self.mode not in ['train', 'test']:
             raise ValueError('Check your dataset mode')
         
+        self.freq = freq
+        
+        if self.freq not in [100, 500]:
+            raise ValueError('Check your Frequency') 
+        
+        self.seconds = seconds
+        
         self.data_li = [] # [file_path, label]
         self.class_map = {
             'NORM': 0, # normal ECG
             'NDT': 1, # non-diagnostic T abnormalities
             'NST_': 2, # non-specific ST changes
-            'DIG': 3, # digitalis-effect
-            'LNGQT': 4 # long QT-interval
+            'LNGQT': 3, # long QT-interval
+            'DIG': 4, # digitalis-effect, 약물 효과라 애매함
         }
         self.abnormal_cnt = 0
         
@@ -58,6 +70,8 @@ class PTB_XL_Dataset(Dataset):
         # target은 tensor로 변환 될 필요 X
         # input tensor(ECG) shape = (seq_len, dim)
         ecg_record = torch.tensor(sample[0], dtype=torch.float32)
+        
+        ecg_record = ecg_record[:(self.freq*self.seconds),:]
         
         return ecg_record, target
     
@@ -161,7 +175,8 @@ class PTB_XL_Dataset(Dataset):
         (3) label은 문제 없는가(순수한가)
         '''
         start_time = time.time()
-        for idx, (file_path, target_dict) in enumerate(zip(self.metadata['filename_lr'], self.metadata['scp_codes'])):
+        filename = 'filename_lr' if self.freq == 100 else 'filename_hr'
+        for idx, (file_path, target_dict) in enumerate(zip(self.metadata[filename], self.metadata['scp_codes'])):
             print(f"\rCheck & Load data: {100*idx/len(self.metadata):.2f}%", end='')
             
             file_path = os.path.join(self.data_dir, file_path)
@@ -197,7 +212,7 @@ class PTB_XL_Dataset(Dataset):
         print(f"\nCheck & Load data time: {load_time//60}m {load_time%60}s")
     
     @staticmethod
-    def visualize(data_path, preprocess=False):
+    def visualize(data_path, preprocess=False, seconds=10):
         if os.path.splitext(data_path)[1] != '':
             raise AssertionError('Extenstion이 존재')
         
@@ -206,6 +221,9 @@ class PTB_XL_Dataset(Dataset):
         if preprocess == True:
             plt.figure(2) # 여러 창 띄울 때도 있음. original은 Figure 1, preprocess는 Figure 2
             sample = PTB_XL_Dataset.preprocess(sample)
+            
+        # Time Cut
+        sample = (sample[0][:(sample[1]['fs']*seconds)], sample[1])
         
         fig, axes = wfdb.plot.plot_items(signal=sample[0],
                                          title=f'PTB-XL Record {data_path[-8:-3]}',
@@ -218,7 +236,7 @@ class PTB_XL_Dataset(Dataset):
                                          return_fig_axes=True)
         
         # Grid
-        major_xticks = [i for i in range(0, 11)]
+        major_xticks = [i for i in range(0, seconds+1)]
         
         for i in range(len(axes)): 
             axes[i].patch.set_facecolor('#fffced')
@@ -228,7 +246,7 @@ class PTB_XL_Dataset(Dataset):
             axes[i].set_ylabel(f"{sample[1]['sig_name'][i]}\n({sample[1]['units'][i]})", rotation=0, labelpad=20, loc='center')
             axes[i].yaxis.set_label_coords(-0.03, 0.3)  # Ylabel의 위치 x, y 좌표 설정 (기본값은 (0, 0.5)), 위 함수 loc에서 center로 조절해도 미세하게 안 맞음
             
-            axes[i].set_xlim(-0.1, 10.1) # x축 범위 지정 (기본은 너무 넓어 보임).3
+            axes[i].set_xlim(-0.1, seconds+0.1) # x축 범위 지정 (기본은 너무 넓어 보임).3
             axes[i].set_xticks(major_xticks) # x축 간격 1초씩 나오도록 함.
             axes[i].grid(linestyle='-', which='major', axis='x', linewidth=1.2)
             
@@ -278,20 +296,28 @@ if __name__ == '__main__':
     print(len(train_ds), len(test_ds))
     '''
     
-    
+    '''
     train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
                               metadata_path='data/PTB-XL/ptbxl_database.csv',
                               mode='train')
     ecg, target = train_ds[0]
     print(ecg.shape, target)
     sys.exit()
+    '''
     
     
-    # 시각화 실험
-    sample_path = r"E:\ECG_AD\data\PTB-XL\records100\00000\00154_lr"
+    # Noise Filtering 비포 애프터 figure로 좋겠다.
     
-    PTB_XL_Dataset.visualize(sample_path, preprocess=False)
-    PTB_XL_Dataset.visualize(sample_path, preprocess=True)
+    sample_path = r"E:\ECG_AD\data\PTB-XL\records500\00000\00529_hr"
+    
+    # PTB_XL_Dataset.visualize(sample_path, preprocess=False, seconds=1)
+    PTB_XL_Dataset.visualize(sample_path, preprocess=True, seconds=2)
+    
+    '''
+    
+    PTB_XL_Dataset.visualize(sample_path, preprocess=False, seconds=2)
+    PTB_XL_Dataset.visualize(sample_path, preprocess=True, seconds=2)
+    '''
     
     # PTB_XL_Dataset.visualize_freq(sample_path, preprocess=False, fig_num=1)
     # PTB_XL_Dataset.visualize_freq(sample_path, preprocess=True, fig_num=2)

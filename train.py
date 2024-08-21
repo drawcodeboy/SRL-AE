@@ -1,35 +1,70 @@
-from torchinfo import summary
 import torch
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
+
+import argparse
+from typing import Optional
+
 from models import load_model
+from dataloader import PTB_XL_Dataset
 
-model_1 = load_model('LSTM-AE')
-model_2 = load_model('ResLSTM-AE')
-model_3 = load_model('SKIP-LSTM-AE')
-model_4 = load_model('CA-LSTM-AE', num_attn_heads=1)
-model_5 = load_model('CarlaNet', num_attn_heads=1)
+def get_args_parser():
+    parser = argparse.ArgumentParser(add_help=False)
+    
+    parser.add_argument("--use-cuda", action='store_true')
+    
+    parser.add_argument("--model", default='LSTM-AE')
+    parser.add_argument("--num-attn-heads", type=Optional[int], default=None)
+    
+    parser.add_argument("--freq", type=int, default=500)
+    parser.add_argument("--seconds", type=int, default=2)
+    
+    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--batch-size", type=int, default=16)
+        
+    return parser
 
-# print(model_1)
-# print(model_2)
-
-sample = torch.randn(16, 1000, 12)
-
-outputs = model_1(sample)
-print(outputs.shape)
-
-outputs = model_2(sample)
-print(outputs.shape)
-
-outputs = model_3(sample)
-print(outputs.shape)
-
-outputs = model_4(sample)
-print(outputs.shape)
-
-outputs = model_5(sample)
-print(outputs.shape)
-
-for model in [model_1, model_2, model_3, model_4, model_5]:
-    p_num = 0
-    for p in model.parameters():
-        p_num += p.numel()
-    print(p_num)
+def print_setup(device, args):
+    print("########[Settings]########\n")
+    print(f"  [device]: {device}")
+    print(f"  [model]: {args.model}")
+    print(f"  [num-attn-heads]: {args.num_attn_heads}")
+    print(f"  [epochs]: {args.epochs}")
+    print(f"  [lr]: {args.lr}")
+    print(f"  [batch size]: {args.batch_size}")
+    print("\n##########################")
+    
+def main(args):
+    device = 'cpu'
+    
+    if args.use_cuda and torch.cuda.is_available():
+        device = 'cuda'
+        
+    print_setup(device, args)
+    
+    # Load Model
+    model = load_model(model_name=args.model,
+                       num_attn_heads=args.num_attn_heads)
+    
+    # Load Dataset
+    train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
+                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+                              mode='train',
+                              freq=args.freq,
+                              seconds=args.seconds)
+    train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
+    
+    sample = next(iter(train_dl))
+    print(sample.shape)  
+    # Loss Function (Reconstruction Loss: MAE Loss)
+    # loss_fn = nn.MAELoss()
+    
+    # Optimizer
+    
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('ECG Anomaly Detection', parents=[get_args_parser()])
+    
+    args = parser.parse_args()
+    
+    main(args)

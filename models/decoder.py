@@ -53,7 +53,7 @@ class Decoder(nn.Module):
             
         # Time Distributed Matrix (# Layer 4)
         self.tdm = nn.Parameter(
-            torch.empty((self.layers_dim[-1], output_dim), dtype=torch.float32, requires_grad=True)
+            torch.randn((self.layers_dim[-1], output_dim), dtype=torch.float32, requires_grad=True)
         )
         
         self.tanh = nn.Tanh()
