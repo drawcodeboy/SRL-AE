@@ -1,5 +1,6 @@
 from typing import Optional
 from .lstm_ae import LSTMAutoencoder
+from .mae_loss import MAELoss
 
 def load_model(model_name:str='LSTM-AE', 
                num_attn_heads:Optional[int]=None):

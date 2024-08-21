@@ -23,13 +23,20 @@ def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, dev
     return (total_loss/len(dataloader)).detach().cpu().numpy() # One Epoch Mean Loss
 
 @torch.no_grad()
-def validate():
+def validate(model, dataloader, loss_fn, scheduler, device):
     '''
         - 2가지 용도로 사용 예정
             - (1) validation: 평균 loss 값 리턴 (Overfitting 확인용)
             - (2) threhosld: loss의 mean, std를 통해서 참고한 논문처럼 threshold 구해서 리턴
     '''
     model.eval()
+    
+    for batch_idx, (batch, targets) in enumerate(dataloader, start=1):
+        batch = batch.to(device)
+        
+        outputs = model(batch)
+        
+        loss = loss_fn(outputs, batch)
 
 @torch.no_grad()
 def evaludate():

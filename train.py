@@ -8,7 +8,7 @@ import argparse
 import time
 from typing import Optional
 
-from models import load_model
+from models import load_model, MAELoss
 from dataloader import PTB_XL_Dataset
 from utils import *
 
@@ -83,7 +83,7 @@ def main(args):
     val_dl = DataLoader(val_ds, shuffle=True, batch_size=args.batch_size)
     
     # Loss Function (Reconstruction Loss: MAE Loss)
-    loss_fn = nn.L1Loss()
+    loss_fn = MAELoss()
     
     # Optimizer
     p = [p for p in model.parameters() if p.requires_grad]
@@ -115,7 +115,7 @@ def main(args):
         
         # Validation
         start_time = int(time.time())
-        val_loss, _, _ = validate(current_epoch, model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값 리턴
+        val_loss, _, _ = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값 리턴
         
         if val_loss < min_val_loss:
             min_val_loss = val_loss
