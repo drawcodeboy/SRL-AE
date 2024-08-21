@@ -83,7 +83,7 @@ def main(args):
     val_dl = DataLoader(val_ds, shuffle=True, batch_size=args.batch_size)
     
     # Loss Function (Reconstruction Loss: MAE Loss)
-    loss_fn = MAELoss()
+    loss_fn = MAELoss().to(device)
     
     # Optimizer
     p = [p for p in model.parameters() if p.requires_grad]
@@ -115,13 +115,13 @@ def main(args):
         
         # Validation
         start_time = int(time.time())
-        val_loss, _, _ = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값 리턴
+        val_loss, _, _ = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값, threshold 리턴
         
         if val_loss < min_val_loss:
             min_val_loss = val_loss
             save_model_ckpt(model, args.model, current_epoch, args.save_weights_dir)
         
-        save_loss_ckpt(model, current_epoch, total_train_loss, total_val_loss, args.save_losses_dir)
+        save_loss_ckpt(args.model, current_epoch, total_train_loss, total_val_loss, args.save_losses_dir)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('ECG Anomaly Detection', parents=[get_args_parser()])

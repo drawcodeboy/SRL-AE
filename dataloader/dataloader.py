@@ -69,11 +69,12 @@ class PTB_XL_Dataset(Dataset):
         
         sample = PTB_XL_Dataset.preprocess(sample)
         
-        # target은 tensor로 변환 될 필요 X
         # input tensor(ECG) shape = (seq_len, dim)
         ecg_record = torch.tensor(sample[0], dtype=torch.float32)
         
         ecg_record = ecg_record[:(self.freq*self.seconds),:]
+        
+        target = torch.tensor([target])
         
         return ecg_record, target
     
