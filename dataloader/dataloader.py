@@ -139,7 +139,7 @@ class PTB_XL_Dataset(Dataset):
         return y
     
     def _mode_transform(self):
-        # Normal Data들이 맨 앞에 오게 정렬
+        # Normal Data들이 맨 앞에 오게 정렬 #### 중요한 부분 #### 
         self.data_li.sort(key=lambda x: x[1]) # inplace-sort
         
         # Train 데이터의 수 구하기
@@ -284,7 +284,6 @@ class PTB_XL_Dataset(Dataset):
         
 if __name__ == '__main__':
     # Train, Test 실험
-    '''
     train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
                               metadata_path='data/PTB-XL/ptbxl_database.csv',
                               mode='train')
@@ -294,7 +293,7 @@ if __name__ == '__main__':
                              mode='test')
     
     print(len(train_ds), len(test_ds))
-    '''
+    sys.exit()
     
     '''
     train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
