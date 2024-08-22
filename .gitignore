@@ -11,14 +11,15 @@
 .vscode
 
 # data
-data/PTB-XL
-data/PTB-XL_500
-data/PTB-XL.zip
-data/PTB-XL_500.zip
-data/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3.zip
+!data/
+data/*
+!data/temp.txt
 
 # saved
-saved/losses/
+!saved/losses/
+saved/losses/*
 !saved/losses/temp.txt
-saved/weights/
+
+!saved/weights/
+saved/weights/*
 !saved/weights/temp.txt
