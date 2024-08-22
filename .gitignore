@@ -19,4 +19,6 @@ data/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3.zip
 
 # saved
 saved/losses/
+!saved/losses/temp.txt
 saved/weights/
+!saved/weights/temp.txt
