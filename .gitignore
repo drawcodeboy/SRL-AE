@@ -11,8 +11,9 @@
 .vscode
 
 # data
-data/
-!data/temp.txt
+data/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3.zip
+data/PTB-XL/
+data/PTB-XL.zip
 
 # saved
 saved/losses/
