@@ -71,16 +71,16 @@ def main(args):
     
     # Load Dataset
     # Train for Threshold
-    train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
-                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+    train_ds = PTB_XL_Dataset(data_dir=args.data_root_dir,
+                              metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
                               mode='train',
                               freq=args.freq,
                               seconds=args.seconds)
     print(f"train samples: {len(train_ds)}")
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
     
-    test_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
-                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+    test_ds = PTB_XL_Dataset(data_dir=args.data_root_dir,
+                              metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
                               mode='test',
                               freq=args.freq,
                               seconds=args.seconds)

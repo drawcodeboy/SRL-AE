@@ -7,6 +7,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import argparse
 import time
 from typing import Optional
+import os
 
 from models import load_model, MAELoss
 from dataloader import PTB_XL_Dataset
@@ -23,6 +24,7 @@ def get_args_parser():
     parser.add_argument("--num-attn-heads", type=Optional[int], default=None)
     
     # Dataset
+    parser.add_argument("--data-root-dir", default="data/PTB-XL")
     parser.add_argument("--freq", type=int, default=500)
     parser.add_argument("--seconds", type=int, default=2)
     
@@ -46,6 +48,7 @@ def print_setup(device, args):
     print(f"  |-[model]: {args.model}")
     print(f"  |-[num-attn-heads]: {args.num_attn_heads}")
     print(f"\n  [DATA]")
+    print(f"  |-[data-root-dir]: {args.data_root_dir}")
     print(f"  |-[freq]: {args.freq}")
     print(f"  |-[seconds]: {args.seconds}")
     print(f"\n  [HYPERPARAMETERS]")
@@ -71,16 +74,16 @@ def main(args):
                        num_attn_heads=args.num_attn_heads).to(device)
     
     # Load Dataset
-    train_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
-                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+    train_ds = PTB_XL_Dataset(data_dir=args.data_root_dir,
+                              metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
                               mode='train',
                               freq=args.freq,
                               seconds=args.seconds)
     print(f"train samples: {len(train_ds)}")
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
     
-    val_ds = PTB_XL_Dataset(data_dir='data/PTB-XL',
-                              metadata_path='data/PTB-XL/ptbxl_database.csv',
+    val_ds = PTB_XL_Dataset(data_dir=args.data_root_dir,
+                              metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
                               mode='val',
                               freq=args.freq,
                               seconds=args.seconds)
