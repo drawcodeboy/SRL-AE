@@ -20,6 +20,7 @@ def get_args_parser():
     parser.add_argument("--num-attn-heads", type=Optional[int], default=None)
     
     # Dataset
+    parser.add_argument("--data-root-dir", default="data/PTB-XL")
     parser.add_argument("--freq", type=int, default=500)
     parser.add_argument("--seconds", type=int, default=2)
     
@@ -39,6 +40,7 @@ def print_setup(device, args):
     print(f"  |-[model]: {args.model}")
     print(f"  |-[num-attn-heads]: {args.num_attn_heads}")
     print(f"\n  [DATA]")
+    print(f"  |-[data-root-dir]: {args.data_root_dir}")
     print(f"  |-[freq]: {args.freq}")
     print(f"  |-[seconds]: {args.seconds}")
     print(f"\n  [HYPERPARAMETERS]")
