@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from .metrics import *
 
 def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, device):
     model.train()
@@ -68,7 +69,7 @@ def validate(model, dataloader, loss_fn, scheduler, device, threshold_method=1):
     return loss_mean, loss_std, loss_threshold
 
 @torch.no_grad()
-def evaludate(model, dataloader, loss_fn, threshold, device):
+def evaluate(model, dataloader, loss_fn, threshold, device):
     '''
         Normal = 0
         Others = 1, 2, 3, 4
@@ -88,10 +89,10 @@ def evaludate(model, dataloader, loss_fn, threshold, device):
         outputs = torch.where((loss <= threshold), 0, 1).view(loss.shape[0], -1)
         
         # 다른 label(1, 2, 3, 4)를 1로 intergrate
-        targets = torch.where((target == 0), 0, 1).view(targets.shape[0], -1)
+        targets = torch.where((targets == 0), 0, 1).view(targets.shape[0], -1)
         
-        outputs.extend(outputs.tolist())
-        targets.extend(targets.tolist())
+        total_outputs.extend(outputs.tolist())
+        total_targets.extend(targets.tolist())
         
     total_outputs = np.array(total_outputs)
     total_targets = np.array(total_targets)
@@ -99,3 +100,5 @@ def evaludate(model, dataloader, loss_fn, threshold, device):
     metrics = ['Accuracy', 'Precision', 'Recall', 
                'Sensitivity', 'Specificity', 'F1-Score']
     metrics_dict = get_metrics(total_outputs, total_targets, metrics)
+    
+    return metrics_dict

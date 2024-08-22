@@ -146,7 +146,7 @@ class PTB_XL_Dataset(Dataset):
         self.data_li.sort(key=lambda x: x[1]) # inplace-sort
         
         # Train 데이터의 수 구하기
-        val_cnt = 100 # 전부 돌아가는지 디버깅할 때는 10으로 낮춰서 할 것
+        val_cnt = 10 # 전부 돌아가는지 디버깅할 때는 10으로 낮춰서 할 것
         train_cnt = len(self.data_li) - 2*self.abnormal_cnt - val_cnt # Total-Test-Val
         
         if self.mode == 'train':
@@ -183,7 +183,7 @@ class PTB_XL_Dataset(Dataset):
         start_time = time.time()
         filename = 'filename_lr' if self.freq == 100 else 'filename_hr'
         for idx, (file_path, target_dict) in enumerate(zip(self.metadata[filename], self.metadata['scp_codes'])):
-            # if idx == 50: break # Test용 코드
+            if idx == 50: break # Test용 코드
             print(f"\r[{self.mode}] Check & Load data: {100*idx/len(self.metadata):.2f}%", end='')
             
             file_path = os.path.join(self.data_dir, file_path)

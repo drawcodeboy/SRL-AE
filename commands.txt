@@ -1,0 +1,5 @@
+# LSTM-AE Train
+python train.py --use-cuda --model=LSTM-AE
+
+# LSTM-AE Test
+python test.py --use-cuda --model=LSTM-AE --weights-filename=LSTM-AE_~~~.pth

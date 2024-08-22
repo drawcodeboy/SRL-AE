@@ -39,7 +39,7 @@ def get_args_parser():
     return parser
 
 def print_setup(device, args):
-    print("======================[Settings]========================")
+    print("=======================[Settings]========================")
     print(f"\n  [GPU]")
     print(f"  |-[device]: {device}")
     print(f"\n  [MODEL]")
@@ -56,7 +56,7 @@ def print_setup(device, args):
     print(f"\n [SAVE PATHS]")
     print(f"  |-[SAVE WEIGHTS DIR]: {args.save_weights_dir}")
     print(f"  |-[SAVE LOSSES DIR]: {args.save_losses_dir}")
-    print("\n======================================================")
+    print("\n=======================================================")
     
 def main(args):
     device = 'cpu'
@@ -85,7 +85,7 @@ def main(args):
                               freq=args.freq,
                               seconds=args.seconds)
     print(f"validation samples: {len(val_ds)}")
-    val_dl = DataLoader(val_ds, shuffle=True, batch_size=args.batch_size)
+    val_dl = DataLoader(val_ds, shuffle=False, batch_size=args.batch_size)
     
     # Loss Function (Reconstruction Loss: MAE Loss)
     loss_fn = MAELoss().to(device)
@@ -135,7 +135,7 @@ def main(args):
         save_loss_ckpt(args.model, current_epoch, total_train_loss, total_val_loss, args.save_losses_dir)
     
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('ECG Anomaly Detection', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('ECG Anomaly Detection Train', parents=[get_args_parser()])
     
     args = parser.parse_args()
     
