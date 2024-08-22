@@ -95,3 +95,7 @@ def evaludate(model, dataloader, loss_fn, threshold, device):
         
     total_outputs = np.array(total_outputs)
     total_targets = np.array(total_targets)
+    
+    metrics = ['Accuracy', 'Precision', 'Recall', 
+               'Sensitivity', 'Specificity', 'F1-Score']
+    metrics_dict = get_metrics(total_outputs, total_targets, metrics)
