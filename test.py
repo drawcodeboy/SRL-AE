@@ -24,7 +24,7 @@ def get_args_parser():
     parser.add_argument("--seconds", type=int, default=2)
     
     # Hyperparameters
-    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--batch-size", type=int, default=32)
     
     # Weights Filename
     parser.add_argument("--weights-filename", default="LSTM-AE_001.pth")

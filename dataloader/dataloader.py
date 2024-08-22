@@ -146,7 +146,7 @@ class PTB_XL_Dataset(Dataset):
         self.data_li.sort(key=lambda x: x[1]) # inplace-sort
         
         # Train 데이터의 수 구하기
-        val_cnt = 100 # 전부 돌아가는지 디버깅할 때는 10으로 낮춰서 할 것
+        val_cnt = 200 # 전부 돌아가는지 디버깅할 때는 10으로 낮춰서 할 것
         train_cnt = len(self.data_li) - 2*self.abnormal_cnt - val_cnt # Total-Test-Val
         
         if self.mode == 'train':
