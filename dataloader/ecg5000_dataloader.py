@@ -7,6 +7,8 @@ from scipy.io import arff
 from matplotlib import pyplot as plt
 import os, sys
 
+__all__ = ['ECG5000_Dataset']
+
 class ECG5000_Dataset(Dataset):
     def __init__(self,
                  data_dir: str='data/ECG5000',
@@ -54,7 +56,7 @@ class ECG5000_Dataset(Dataset):
             sample = sample / max_abs
             
         # transform to tensor
-        sample = torch.tensor(sample, dtype=torch.float32)
+        sample = torch.tensor(sample, dtype=torch.float32).view(-1, 1)
         target = torch.tensor(target)
         
         return sample, target

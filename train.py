@@ -10,7 +10,7 @@ from typing import Optional
 import os
 
 from models import load_model, MAELoss
-from dataloader import PTB_XL_Dataset
+from dataloader import load_dataset
 from utils import *
 
 def get_args_parser():
@@ -21,10 +21,11 @@ def get_args_parser():
     
     # Model
     parser.add_argument("--model", default='LSTM-AE')
-    parser.add_argument("--num-attn-heads", type=Optional[int], default=None)
+    parser.add_argument("--num-attn-heads", type=int, default=None)
     
     # Dataset
-    parser.add_argument("--data-root-dir", default="data/PTB-XL")
+    parser.add_argument("--dataset", default="ECG5000")
+    parser.add_argument("--data-root-dir", default="data/ECG5000")
     parser.add_argument("--freq", type=int, default=500)
     parser.add_argument("--seconds", type=int, default=2)
     
@@ -32,7 +33,7 @@ def get_args_parser():
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=8)
     
     # Save Paths
     parser.add_argument("--save-weights-dir", default="saved/weights")
@@ -48,9 +49,10 @@ def print_setup(device, args):
     print(f"  |-[model]: {args.model}")
     print(f"  |-[num-attn-heads]: {args.num_attn_heads}")
     print(f"\n  [DATA]")
-    print(f"  |-[data-root-dir]: {args.data_root_dir}")
-    print(f"  |-[freq]: {args.freq}")
-    print(f"  |-[seconds]: {args.seconds}")
+    print(f"  |-[dataset(ALL)]: {args.dataset}")
+    print(f"  |-[data-root-dir(ALL)]: {args.data_root_dir}")
+    print(f"  |-[freq(PTB-XL)]: {args.freq}")
+    print(f"  |-[seconds(PTB-XL)]: {args.seconds}")
     print(f"\n  [HYPERPARAMETERS]")
     print(f"  |-[epochs]: {args.epochs}")
     print(f"  |-[lr]: {args.lr}")
@@ -74,19 +76,19 @@ def main(args):
                        num_attn_heads=args.num_attn_heads).to(device)
     
     # Load Dataset
-    train_ds = PTB_XL_Dataset(data_dir=args.data_root_dir,
-                              metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
-                              mode='train',
-                              freq=args.freq,
-                              seconds=args.seconds)
+    train_ds = load_dataset(data_dir=args.data_root_dir,
+                            metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
+                            mode='train',
+                            freq=args.freq,
+                            seconds=args.seconds)
     print(f"train samples: {len(train_ds)}")
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
     
-    val_ds = PTB_XL_Dataset(data_dir=args.data_root_dir,
-                              metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
-                              mode='val',
-                              freq=args.freq,
-                              seconds=args.seconds)
+    val_ds = load_dataset(data_dir=args.data_root_dir,
+                          metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
+                          mode='val',
+                          freq=args.freq,
+                          seconds=args.seconds)
     print(f"validation samples: {len(val_ds)}")
     val_dl = DataLoader(val_ds, shuffle=False, batch_size=args.batch_size)
     
