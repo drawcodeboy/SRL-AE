@@ -50,10 +50,10 @@ def print_setup(device, args):
     print("\n=========================================================")
     
 def print_metrics(metrics_dict:dict):
-    print("=======================[Metrics]========================\n")
+    print()
     for key, value in metrics_dict.items():
         print(f"    [{key}]: {value:.8f}")
-    print("\n========================================================")
+    print()
     
 def main(args):
     device = 'cpu'

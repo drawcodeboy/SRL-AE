@@ -125,7 +125,7 @@ def main(args):
         
         # Validation
         start_time = int(time.time())
-        val_loss, _, _ = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값, threshold 리턴
+        val_loss, val_std, val_threshold = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값, threshold 리턴
         val_time = int(time.time()) - start_time
         print(f"Validation Reconstruction Loss: {val_loss:.6f}")
         print(f"Validation Time: {val_time//60:02d}m {val_time%60:02d}s")
