@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from .residual_lstm import ResLSTM
-from .peephole_lstm import PeepholeLSTM
 
 '''
 Dimension
