@@ -28,6 +28,7 @@ class LSTMAutoencoder(nn.Module):
             - encoder_lstm_type & decoder_lstm_type: LSTM의 종류 (plain, res)
                 - 'plain': 일반적인 LSTM
                 - 'res': Residual LSTM
+                - 'peephole': Peephole LSTM
 
         Description:
             사용되는 LSTM 자체는 Encoder에서 num_layers개,
@@ -36,10 +37,10 @@ class LSTMAutoencoder(nn.Module):
         if num_layers != len(hidden_dims):
             raise AssertionError("Not Equal num_layers, len(hidden_dims)")
         
-        if encoder_lstm_type not in ['plain', 'res']:
+        if encoder_lstm_type not in ['plain', 'res', 'peephole']:
             raise AssertionError("Check your Encoder LSTM type")
         
-        if decoder_lstm_type not in ['plain', 'res']:
+        if decoder_lstm_type not in ['plain', 'res', 'peephole']:
             raise AssertionError("Check your Encoder LSTM type")
         
         if connect not in ['none', 'skip', 'cross-att']:

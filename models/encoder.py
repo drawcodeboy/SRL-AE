@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from .residual_lstm import ResLSTM
+from .peephole_lstm import PeepholeLSTM
 
 '''
 Dimension
@@ -35,6 +36,12 @@ class Encoder(nn.Module):
                     input_size=self.layers_dim[idx],
                     hidden_size=self.layers_dim[idx+1],
                     batch_first=True,
+                )
+            elif lstm_type == 'peephole':
+                layer = PeepholeLSTM(
+                    input_sz=self.layers_dim[idx],
+                    hidden_sz=self.layers_dim[idx+1],
+                    peephole=True
                 )
             self.lstm_layers.append(layer)
             
