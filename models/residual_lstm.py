@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import sys
+import math
 
 class ResLSTMCell(nn.Module):
     '''
@@ -10,6 +12,10 @@ class ResLSTMCell(nn.Module):
         - proj_size: hidden state dimension
     '''
     def __init__(self, input_size, hidden_size, proj_size=0):
+        '''
+        weights_{gate}_{input or h_state or c_state} except weights_r
+        bias_{gate}
+        '''
         super(ResLSTMCell, self).__init__()
         
         proj_size = hidden_size if proj_size == 0 else proj_size
@@ -20,84 +26,92 @@ class ResLSTMCell(nn.Module):
         
         # Input, Forget Gate의 가중치를 붙여서 한 번의 연산으로 구하도록 한 것
         # 대신 가독성은 떨어짐.
-        self.weight_ii = nn.Parameter(torch.randn(2 * hidden_size, input_size))
-        self.weight_ih = nn.Parameter(torch.randn(2 * hidden_size, proj_size))
-        self.weight_ic = nn.Parameter(torch.randn(2 * hidden_size, hidden_size))
+        self.weight_if_x = nn.Parameter(torch.randn(input_size, 2 * hidden_size))
+        self.weight_if_h = nn.Parameter(torch.randn(proj_size, 2 * hidden_size))
+        self.weight_if_c = nn.Parameter(torch.randn(hidden_size, 2 * hidden_size))
         
-        self.bias_ii = nn.Parameter(torch.randn(1 * hidden_size))
-        self.bias_if = nn.Parameter(torch.randn(1 * hidden_size))
+        self.bias_i = nn.Parameter(torch.randn(1 * hidden_size))
+        self.bias_f = nn.Parameter(torch.randn(1 * hidden_size))
         
         # Cell Gate
-        self.weight_ci = nn.Parameter(torch.randn(1 * hidden_size, input_size))
-        self.weight_ch = nn.Parameter(torch.randn(1 * hidden_size, proj_size))
+        self.weight_c_x = nn.Parameter(torch.randn(input_size, 1 * hidden_size))
+        self.weight_c_h = nn.Parameter(torch.randn(proj_size, 1 * hidden_size))
         self.bias_c = nn.Parameter(torch.randn(1 * hidden_size))
         
         # Output Gate
-        self.weight_oi = nn.Parameter(torch.randn(1 * proj_size, input_size))
-        self.weight_oh = nn.Parameter(torch.randn(1 * proj_size, proj_size))
-        self.weight_oc = nn.Parameter(torch.randn(1 * proj_size, hidden_size))
+        self.weight_o_x = nn.Parameter(torch.randn(input_size, 1 * proj_size))
+        self.weight_o_h = nn.Parameter(torch.randn(proj_size, 1 * proj_size))
+        self.weight_o_c = nn.Parameter(torch.randn(hidden_size, 1 * proj_size))
         self.bias_o = nn.Parameter(torch.randn(1 * proj_size))
         
-        self.weight_r_proj = nn.Parameter(torch.randn(proj_size, hidden_size))
-        self.weight_ir = nn.Parameter(torch.randn(proj_size, input_size))
+        self.weight_r_proj = nn.Parameter(torch.randn(hidden_size, proj_size))
+        self.weight_r_x = nn.Parameter(torch.randn(input_size, proj_size))
 
-    def forward(self, input, hidden=None, pre_output=None):
+        self._init_weights()
+        
+    def _init_weights(self):
+        # *****여기서 가장 중요한 코드*****
+        # 혹은 위 파라미터들을 전부 torch.empty()로 만들어주고 학습해야 함.
+        stdv = 1.0 / math.sqrt(self.proj_size) # proj_size = 실제 hidden_size
+        for weight in self.parameters():
+            weight.data.uniform_(-stdv, stdv)
+    
+    def forward(self, x_t, hidden=None):
         '''
         Type Hints
-            - input: torch.Tensor
-            - pre_output: torch.Tensor, input 혹은 이전 레이어의 output - Residual Connection
+            - x_t: torch.Tensor
             - hidden: Tuple[torch.Tensor, torch.Tensor]
             
             Returns:
                 - Output Sequence, (n-th Hidden State, n-th Cell State)
                 - Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]
         '''
-        pre_output = input if pre_output is None else pre_output
         
         # Hidden State, Cell State
-        hx, cx = hidden[0], hidden[1]
+        h_t, c_t = hidden[0], hidden[1]
     
         # Cell State까지 Gate를 만드는 연산에 포함시키는 것은
         # 해당 LSTM이 Peephole LSTM이라 그럼
         # 즉, 아래 코드는 forget, input, output gate를 만들기 위함인 것
-        if_gates = (torch.matmul(input, self.weight_ii.t()) + 
-                     torch.matmul(hx, self.weight_ih.t()) + 
-                     torch.matmul(cx, self.weight_ic.t()))
+        if_gates = (torch.matmul(x_t, self.weight_if_x) + 
+                     torch.matmul(h_t, self.weight_if_h) + 
+                     torch.matmul(c_t, self.weight_if_c))
         
         # (bz, cell_state), (bz, cell_state) = (bz, 2*cell_state)
         ingate, forgetgate = if_gates.chunk(2, -1) 
         
-        ingate = ingate + self.bias_ii
-        forgetgate = forgetgate + self.bias_if
+        ingate = ingate + self.bias_i
+        forgetgate = forgetgate + self.bias_f
                 
         # Cell Gate (Peephole LSTM 수식보면 여기는 이전 Cell state가 들어가지 않음.)
-        cellgate = (torch.matmul(input, self.weight_ci.t()) + 
-                    torch.matmul(hx, self.weight_ch.t()) + self.bias_c)
+        cellgate = (torch.matmul(x_t, self.weight_c_x) + 
+                    torch.matmul(h_t, self.weight_c_h) + self.bias_c)
         
         
         ingate = torch.sigmoid(ingate)
         forgetgate = torch.sigmoid(forgetgate)
         cellgate = torch.tanh(cellgate)
 
-        cy = (forgetgate * cx) + (ingate * cellgate)
-        
-        outgate = (torch.matmul(input, self.weight_oi.t()) + 
-                   torch.matmul(hx, self.weight_oh.t()) + 
-                   torch.matmul(cy, self.weight_oc.t()) + self.bias_o)
+        c_t = (forgetgate * c_t) + (ingate * cellgate)
+        # c_t_ = c_t.detach()
+        outgate = (torch.matmul(x_t, self.weight_o_x) + 
+                   torch.matmul(h_t, self.weight_o_h) + 
+                   torch.matmul(c_t, self.weight_o_c) + self.bias_o)
         
         outgate = torch.sigmoid(outgate)
         
-        ry = torch.tanh(cy)
-        ry = torch.matmul(ry, self.weight_r_proj.t())
+        r_t = torch.tanh(c_t) # c_t => r_t
+        # r_t = r_t.detach() # Cell state에 대한 graident flow를 끊어줌
+        m_t = torch.matmul(r_t, self.weight_r_proj)
 
         # 여기가 Residual LSTM의 핵심
         # 이전 LSTM Layer의 output과 현재 hidden state를 묶는 과정
         if self.input_size == self.proj_size:
-          hy = outgate * (ry + pre_output)
+          h_t = outgate * (m_t + x_t)
         else:
-          hy = outgate * (ry + torch.matmul(pre_output, self.weight_ir.t()))
+          h_t = outgate * (m_t + torch.matmul(x_t, self.weight_r_x))
           
-        return hy, (hy, cy)
+        return h_t, c_t
 
 class ResLSTM(nn.Module):
     def __init__(self, 
@@ -107,29 +121,32 @@ class ResLSTM(nn.Module):
                  batch_first=False):
         
         super(ResLSTM, self).__init__()
+        
+        proj_size = (hidden_size if proj_size == 0 else proj_size)
+        
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.proj_size = hidden_size if proj_size == 0 else proj_size
+        self.proj_size = proj_size
         self.batch_first = batch_first
         
         self.cell = ResLSTMCell(input_size, hidden_size, proj_size)
 
-    def forward(self, input, hidden=None, pre_output=None):
+    def forward(self, x, hidden=None):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         
-        inputs = input.unbind(-2) # Sequence를 각 Seq의 element를 담은 tuple로 변환
         outputs = []
-        
-        pre_output = input if pre_output is None else pre_output
-        pre_outputs = pre_output.unbind(-2)
         
         if hidden is None:
             # nn.LSTM에서도 따로 provide 하지 않으면, h0, c0은 초기에 zero로 간다.
-            hidden = (torch.zeros(1, self.proj_size), torch.zeros(1, self.hidden_size))
+            hidden = (torch.zeros(1, self.proj_size).to(x.device), 
+                      torch.zeros(1, self.hidden_size).to(x.device))
         
-        for i in range(len(inputs)):
-            out, hidden = self.cell(inputs[i], hidden, pre_outputs[i])
-            outputs += [out]
+        seq_len = x.size()[1]
+        
+        for t in range(seq_len):
+            x_t = x[:, t, :]
+            hidden = self.cell(x_t, hidden)
+            outputs += [hidden[0]]
         outputs = torch.stack(outputs)
         
         if self.batch_first:
@@ -142,16 +159,16 @@ class ResLSTM(nn.Module):
         return outputs, (h_n, c_n)
     
 if __name__ == '__main__':
-    cell = ResLSTMCell(input_size=3, hidden_size=5, proj_size=4)
+    # cell = ResLSTMCell(input_size=3, hidden_size=5, proj_size=4)
         
-    x = torch.randn(20, 3)
-    hidden_state = torch.randn(20, 4)
-    cell_state = torch.randn(20, 5)
+    # x = torch.randn(20, 3)
+    # hidden_state = torch.randn(20, 4)
+    # cell_state = torch.randn(20, 5)
     
-    cell(x, (hidden_state, cell_state))
+    # cell(x, (hidden_state, cell_state))
     
-    model1 = ResLSTM(input_size=2, hidden_size=4, batch_first=True)
-    model2 = nn.LSTM(input_size=2, hidden_size=4, batch_first=True)
+    model1 = ResLSTM(input_size=4, hidden_size=8, batch_first=True)
+    model2 = nn.LSTM(input_size=4, hidden_size=8, batch_first=True)
     
     p_sum = 0
     for p in model1.parameters():
