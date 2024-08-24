@@ -1,5 +1,7 @@
-# LSTM-AE Train
-python train.py --use-cuda --model=LSTM-AE
+# train LSTM-AE
+python train.py --model=LSTM-AE
 
-# LSTM-AE Test
-python test.py --use-cuda --model=LSTM-AE --weights-filename=LSTM-AE_~~~.pth
+# test LSTM-AE
+python test.py --model=LSTM-AE --weights-filename=LSTM-AE_100.pth
+
+# You Need to set --num-attn-heads when using a model related to Cross-Attention
