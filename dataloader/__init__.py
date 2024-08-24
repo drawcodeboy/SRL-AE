@@ -14,6 +14,7 @@ def load_dataset(dataset: str="ECG5000",
                                mode=mode)
     elif dataset=="PTB-XL":
         return PTB_XL_Dataset(data_dir=data_dir,
+                              metadata_path=metadata_path,
                               mode=mode,
                               freq=freq,
                               seconds=seconds)

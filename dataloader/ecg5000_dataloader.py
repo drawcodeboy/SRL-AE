@@ -13,7 +13,8 @@ class ECG5000_Dataset(Dataset):
     def __init__(self,
                  data_dir: str='data/ECG5000',
                  mode: str='train',
-                 val_size: float=0.2):
+                 train_size: int=2000,
+                 val_size: int=100):
         '''
         Args:
             - data_dir: Data의 Root 디렉터리
@@ -21,6 +22,7 @@ class ECG5000_Dataset(Dataset):
         '''
         self.data_dir = data_dir
         self.mode = mode
+        self.train_size = train_size
         self.val_size = val_size
         
         self.len = 140 # all samples length is 140, 141 is label
@@ -49,12 +51,13 @@ class ECG5000_Dataset(Dataset):
         
         # MaxAbs Scaling
         # 신호의 변동성 (-1, 1)을 위해서 다음과 같은 전처리를 수행
+        
         sample_abs = np.abs(sample)
         max_abs = np.max(sample_abs)
         
         if max_abs != 0.:
             sample = sample / max_abs
-            
+        
         # transform to tensor
         sample = torch.tensor(sample, dtype=torch.float32).view(-1, 1)
         target = torch.tensor(target)
@@ -72,13 +75,23 @@ class ECG5000_Dataset(Dataset):
         # ['N', 'R-on-T', 'PVC', 'SP', 'UB']
         targets = np.unique(df_train['target'])
         
-        # train set(includes val set)에서 abnormal이 있을 필요는 없음.
-        # train set의 abnormal을 test set으로 옮김
-        df_train_abnormal = df_train[df_train['target'] != targets[0]]
-        df_test = pd.concat([df_test, df_train_abnormal], axis=0) # test set에 추가
-        df_train.drop(df_train[df_train['target'] != targets[0]].index, inplace=True) # train set에서 abnormal 제거
+        df = pd.concat([df_train, df_test], axis=0)
+        df_normal = df[df['target'] == targets[0]]
+        df_abnormal = df[df['target'] != targets[0]]
         
-        train_range = int(len(df_train) * (1-self.val_size))
+        df_train = df_normal[:self.train_size]
+        df_test = pd.concat((df_normal[self.train_size:], df_abnormal), axis=0)
+        
+        train_range = self.train_size - self.val_size
+        
+        '''
+        print("[Train]")
+        print(f"Normal: {(df_train['target'] == targets[0]).sum()}")
+        print(f"Abnormal: {(df_train['target'] != targets[0]).sum()}")
+        print("[Test]")
+        print(f"Normal: {(df_test['target'] == targets[0]).sum()}")
+        print(f"Abnormal: {(df_test['target'] != targets[0]).sum()}")
+        '''
         
         if self.mode == 'train':
             for idx in range(0, train_range):
@@ -97,14 +110,14 @@ class ECG5000_Dataset(Dataset):
                 sample = df_test.iloc[idx][:self.len]
                 label = self.class_map[str(df_test['target'].iloc[idx])]
                 self.data_li.append([sample, label])
-
-
+                        
 if __name__ == '__main__':
     train_ds = ECG5000_Dataset(mode='train')
     val_ds = ECG5000_Dataset(mode='val')
     test_ds = ECG5000_Dataset(mode='test')
     print(len(train_ds), len(val_ds), len(test_ds))
     
+    '''
     sample = train_ds[0][0].detach().cpu().numpy()
     print(sample.shape)
     print(train_ds[0][1])
@@ -112,3 +125,4 @@ if __name__ == '__main__':
     
     plt.plot(np.linspace(0, 100, len(sample)), sample)
     plt.show()
+    '''
