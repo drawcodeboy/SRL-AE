@@ -31,7 +31,7 @@ def get_args_parser():
     
     # Hyperparameters
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--batch-size", type=int, default=8)
     
@@ -76,7 +76,8 @@ def main(args):
                        num_attn_heads=args.num_attn_heads).to(device)
     
     # Load Dataset
-    train_ds = load_dataset(data_dir=args.data_root_dir,
+    train_ds = load_dataset(dataset=args.dataset,
+                            data_dir=args.data_root_dir,
                             metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
                             mode='train',
                             freq=args.freq,
@@ -84,7 +85,8 @@ def main(args):
     print(f"train samples: {len(train_ds)}")
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=args.batch_size)
     
-    val_ds = load_dataset(data_dir=args.data_root_dir,
+    val_ds = load_dataset(dataset=args.dataset,
+                          data_dir=args.data_root_dir,
                           metadata_path=os.path.join(args.data_root_dir, "ptbxl_database.csv"),
                           mode='val',
                           freq=args.freq,
@@ -137,6 +139,8 @@ def main(args):
             min_val_loss = val_loss
             save_model_ckpt(model, args.model, current_epoch, args.save_weights_dir)
         
+        total_train_loss.append(train_loss)
+        total_val_loss.append(val_loss)
         save_loss_ckpt(args.model, current_epoch, total_train_loss, total_val_loss, args.save_losses_dir)
     
 if __name__ == '__main__':

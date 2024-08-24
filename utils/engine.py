@@ -2,6 +2,13 @@ import torch
 import numpy as np
 from .metrics import *
 
+__all__ = ['train_one_epoch', 'validate', 'evaluate']
+
+def print_param(model): # 모델 디버깅용 (코드 정리할 때 버릴 함수)
+    for name, p in model.named_parameters():
+        if name == "decoder.lstm_layers.0.cell.weight_if_x":
+            print(f"{name}: {p.grad}")
+
 def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, device):
     model.train()
     
@@ -15,6 +22,9 @@ def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, dev
         
         # Reconstruction Loss
         loss = loss_fn(outputs, batch)
+        
+        # debug
+        # print(loss)
         
         total_loss.extend(loss.tolist())
         
@@ -77,6 +87,7 @@ def evaluate(model, dataloader, loss_fn, threshold, device):
     model.eval()
     
     total_outputs, total_targets = [], []
+    total_loss = []
     
     for batch_idx, (batch, targets) in enumerate(dataloader, start=1):
         batch = batch.to(device)
@@ -84,6 +95,8 @@ def evaluate(model, dataloader, loss_fn, threshold, device):
         outputs = model(batch)
         
         loss = loss_fn(outputs, batch)
+        
+        total_loss.extend(loss.tolist())
         
         # thereshold보다 작으면 0(Normal), 아니면 1(Abnormal)
         outputs = torch.where((loss <= threshold), 0, 1).view(loss.shape[0], -1)
@@ -101,4 +114,4 @@ def evaluate(model, dataloader, loss_fn, threshold, device):
                'Sensitivity', 'Specificity', 'F1-Score']
     metrics_dict = get_metrics(total_outputs, total_targets, metrics)
     
-    return metrics_dict
+    return metrics_dict, total_outputs, total_targets, total_loss
