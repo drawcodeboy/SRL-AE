@@ -4,8 +4,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
 from scipy.io import arff
-from matplotlib import pyplot as plt
-import os, sys
+import os
 
 __all__ = ['ECG5000_Dataset']
 
@@ -19,6 +18,8 @@ class ECG5000_Dataset(Dataset):
         Args:
             - data_dir: Data의 Root 디렉터리
             - mode: 'train', 'val', 'test'
+            - train_size: train set size
+            - val_size: val set size
         '''
         self.data_dir = data_dir
         self.mode = mode
@@ -84,15 +85,6 @@ class ECG5000_Dataset(Dataset):
         
         train_range = self.train_size - self.val_size
         
-        '''
-        print("[Train]")
-        print(f"Normal: {(df_train['target'] == targets[0]).sum()}")
-        print(f"Abnormal: {(df_train['target'] != targets[0]).sum()}")
-        print("[Test]")
-        print(f"Normal: {(df_test['target'] == targets[0]).sum()}")
-        print(f"Abnormal: {(df_test['target'] != targets[0]).sum()}")
-        '''
-        
         if self.mode == 'train':
             for idx in range(0, train_range):
                 sample = df_train.iloc[idx][:self.len]
@@ -110,19 +102,3 @@ class ECG5000_Dataset(Dataset):
                 sample = df_test.iloc[idx][:self.len]
                 label = self.class_map[str(df_test['target'].iloc[idx])]
                 self.data_li.append([sample, label])
-                        
-if __name__ == '__main__':
-    train_ds = ECG5000_Dataset(mode='train')
-    val_ds = ECG5000_Dataset(mode='val')
-    test_ds = ECG5000_Dataset(mode='test')
-    print(len(train_ds), len(val_ds), len(test_ds))
-    
-    '''
-    sample = train_ds[0][0].detach().cpu().numpy()
-    print(sample.shape)
-    print(train_ds[0][1])
-    
-    
-    plt.plot(np.linspace(0, 100, len(sample)), sample)
-    plt.show()
-    '''
