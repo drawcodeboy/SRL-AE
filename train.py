@@ -6,7 +6,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import argparse
 import time
-from typing import Optional
 import os
 
 from models import load_model, MAELoss
@@ -21,7 +20,6 @@ def get_args_parser():
     
     # Model
     parser.add_argument("--model", default='LSTM-AE')
-    parser.add_argument("--num-attn-heads", type=int, default=None)
     
     # Dataset
     parser.add_argument("--dataset", default="ECG5000")
@@ -47,7 +45,6 @@ def print_setup(device, args):
     print(f"  |-[device]: {device}")
     print(f"\n  [MODEL]")
     print(f"  |-[model]: {args.model}")
-    print(f"  |-[num-attn-heads]: {args.num_attn_heads}")
     print(f"\n  [DATA]")
     print(f"  |-[dataset(ALL)]: {args.dataset}")
     print(f"  |-[data-root-dir(ALL)]: {args.data_root_dir}")
@@ -72,8 +69,7 @@ def main(args):
     print_setup(device, args)
     
     # Load Model
-    model = load_model(model_name=args.model,
-                       num_attn_heads=args.num_attn_heads).to(device)
+    model = load_model(model_name=args.model).to(device)
     
     # Load Dataset
     train_ds = load_dataset(dataset=args.dataset,
@@ -111,7 +107,6 @@ def main(args):
     total_train_loss = []
     total_val_loss = []
     
-    min_train_loss = 10000.
     min_val_loss = 10000.
     
     for current_epoch in range(0, args.epochs):
@@ -122,14 +117,14 @@ def main(args):
         
         # Training One Epoch
         start_time = int(time.time())
-        train_loss = train_one_epoch(current_epoch, model, train_dl, optimizer, loss_fn, scheduler, device)
+        train_loss = train_one_epoch(args.model, current_epoch, model, train_dl, optimizer, loss_fn, scheduler, device)
         train_time = int(time.time() - start_time)
         print(f"Training Time: {train_time//60:02d}m {train_time%60:02d}s")
         print()
         
         # Validation
         start_time = int(time.time())
-        val_loss, val_std, val_threshold = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값, threshold 리턴
+        val_loss, _, _ = validate(model, val_dl, loss_fn, scheduler, device) # loss의 mean, std 값, threshold 리턴
         val_time = int(time.time()) - start_time
         print(f"Validation Reconstruction Loss: {val_loss:.6f}")
         print(f"Validation Time: {val_time//60:02d}m {val_time%60:02d}s")

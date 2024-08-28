@@ -100,45 +100,52 @@ def main(args):
     loss_fn = MAELoss().to(device)
     
     # Get Threshold
-    print("======================================================")
+    print("=========================================================")
     start_time = int(time.time())
-    loss_mean, loss_std, threshold = validate(model, train_dl, loss_fn, None, device)
+    loss_mean, loss_std, init_threshold = validate(model, train_dl, loss_fn, None, device)
     threshold_time = int(time.time() - start_time)
     print(f"Getting Threshold Time: {threshold_time//60:02d}m {threshold_time%60:02d}s")
     print(f"loss mean: {loss_mean:.6f}, loss std: {loss_std:.6f}")
-    print(f"<<Threshold: {threshold:.6f}>>")
+    print(f"<<Init Threshold: {init_threshold:.6f}>>")
         
     # Test
+    print("=========================================================")
     start_time = int(time.time())
-    metrics_dict, outputs, targets, losses = evaluate(model, test_dl, loss_fn, threshold, device)
+    metrics_dict, losses, opt_threshold, norm_loss, abnorm_loss = evaluate(model, test_dl, loss_fn, init_threshold, device)
     test_time = int(time.time()) - start_time
     print(f"Test Time: {test_time//60:02d}m {test_time%60:02d}s")
+    print(f"<<Optimized Threshold: {opt_threshold:.6f}>>")
     print_metrics(metrics_dict)
     
-    outputs = outputs.reshape(-1)
-    targets = targets.reshape(-1)
-    
-    losses = np.stack((np.array(losses), targets), axis=-1)
-    
-    loss_normal = []
-    loss_abnormal = []
-    
-    for loss, label in losses:
-        if label == 0:
-            loss_normal.append(loss)
-        else:
-            loss_abnormal.append(loss)
+    norm_loss2 = norm_loss[norm_loss <= opt_threshold]
+    abnorm_loss2 = abnorm_loss[abnorm_loss > opt_threshold]
 
+    # Settings
     plt.figure(figsize=(12, 4))
     plt.xlim(0, 50)
+    plt.ylim(0, 120)
     bins=300
-    plt.hist(loss_normal, bins=bins)
-    plt.hist(loss_abnormal, bins=bins)
+    plt.hist(norm_loss, bins=bins)
+    plt.hist(abnorm_loss, bins=bins)
     plt.title(f"{args.model} reconstruction loss")
     
-    plt.text(35, 95, f"train loss threshold: {threshold:.6f}")
-    plt.text(35, 85, f"train loss mean: {loss_mean:.4f}")
-    plt.text(35, 75, f"train loss std: {loss_std:.4f}")
+    # Threshold
+    plt.axvline(x=opt_threshold, color='r')
+    
+    # Mean Distance
+    plt.plot([np.mean(norm_loss), np.mean(abnorm_loss)], [30, 30], marker='o', color='g')
+    plt.plot([np.mean(norm_loss2), 
+              np.mean(abnorm_loss2)], [20, 20], marker='o', color='m')
+    
+    # Metrics
+    plt.text(35, 95, f"Optimized Loss Threshold: {opt_threshold:.6f}")
+    plt.text(35, 85, f"Normal Loss Mean: {np.mean(norm_loss):.4f}")
+    plt.text(35, 75, f"Abormal Loss Mean: {np.mean(abnorm_loss):.4f}")
+    plt.text(35, 65, f"Mean Distance(all): {abs(np.mean(abnorm_loss)-np.mean(norm_loss)):.4f}")
+    plt.text(35, 55, f"Mean Distance(threshold): {abs(np.mean(abnorm_loss2)-np.mean(norm_loss2)):.4f}")
+    
+    plt.text(35, 45, f"Acc: {metrics_dict['Accuracy']*100:.4f}%")
+    plt.text(35, 35, f"F1-Score: {metrics_dict['F1-Score']*100:.4f}")
     
     if args.savefig == True:
         plt.savefig(f"figures/{args.model}_reconstruction.jpg", dpi=300)
