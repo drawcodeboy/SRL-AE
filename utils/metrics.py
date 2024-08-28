@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Optional
 
 def base_metrics(outputs, targets):
     '''
@@ -21,8 +22,14 @@ def base_metrics(outputs, targets):
     
     return TP, FP, TN, FN
 
-def get_metrics(outputs, targets, metrics):
-    TP, FP, TN, FN = base_metrics(outputs, targets)
+def get_metrics(metrics, 
+                outputs:Optional[np.ndarray]=None, 
+                targets:Optional[np.ndarray]=None,
+                confusion:Optional[dict]=None):
+    if confusion is None:
+        TP, FP, TN, FN = base_metrics(outputs, targets)
+    else:
+        TP, FP, TN, FN = (v for v in confusion.values())
     
     metrics_dict = {}
     TP = np.where(TP == 0., 1e-6, TP)

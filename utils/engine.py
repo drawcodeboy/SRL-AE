@@ -2,14 +2,9 @@ import torch
 import numpy as np
 from .metrics import *
 
-__all__ = ['train_one_epoch', 'validate', 'evaluate']
+__all__ = ['train_one_epoch', 'validate', 'evaluate', 'opt_threshold']
 
-def print_param(model): # 모델 디버깅용 (코드 정리할 때 버릴 함수)
-    for name, p in model.named_parameters():
-        if name == "decoder.lstm_layers.0.cell.weight_if_x":
-            print(f"{name}: {p.grad}")
-
-def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, device):
+def train_one_epoch(model_name, epoch, model, dataloader, optimizer, loss_fn, scheduler, device):
     model.train()
     
     total_loss = []
@@ -22,6 +17,10 @@ def train_one_epoch(epoch, model, dataloader, optimizer, loss_fn, scheduler, dev
         
         # Reconstruction Loss
         loss = loss_fn(outputs, batch)
+        
+        # Regularization term is model use Sparsity parameter
+        if model_name[:4] == 'Spar':
+            loss += model.enc_sparsity_loss
         
         # debug
         # print(loss)
@@ -79,7 +78,7 @@ def validate(model, dataloader, loss_fn, scheduler, device, threshold_method=1):
     return loss_mean, loss_std, loss_threshold
 
 @torch.no_grad()
-def evaluate(model, dataloader, loss_fn, threshold, device):
+def evaluate(model, dataloader, loss_fn, threshold, device, threshold_method=3):
     '''
         Normal = 0
         Others = 1, 2, 3, 4
@@ -107,11 +106,62 @@ def evaluate(model, dataloader, loss_fn, threshold, device):
         total_outputs.extend(outputs.tolist())
         total_targets.extend(targets.tolist())
         
+        print(f"\rTest: {100*batch_idx/len(dataloader):.2f}%", end="")
+    print()
+    
     total_outputs = np.array(total_outputs)
     total_targets = np.array(total_targets)
     
     metrics = ['Accuracy', 'Precision', 'Recall', 
                'Sensitivity', 'Specificity', 'F1-Score']
-    metrics_dict = get_metrics(total_outputs, total_targets, metrics)
     
-    return metrics_dict, total_outputs, total_targets, total_loss
+    metrics_dict = None
+    normal_loss, abnormal_loss = None, None
+    
+    if threshold_method != 3:
+        # Don't Use!
+        metrics_dict = get_metrics(metrics, total_outputs, total_targets)
+    else:
+        metrics_dict, threshold, normal_loss, abnormal_loss = opt_threshold(threshold, np.array(total_loss), total_targets.reshape(-1))
+    
+    return metrics_dict, total_loss, threshold, normal_loss, abnormal_loss
+
+def opt_threshold(init_threshold, total_loss, total_targets, interval:float=1):
+    total_info = np.stack((total_loss, total_targets)) # (N, ), (N, ) -> (2, N)
+    
+    total_info = total_info[:, total_info[0].argsort()] # sort according to threshold
+    
+    normal_loss = total_info[0, (total_info[1] == 0)]
+    abnormal_loss = total_info[0, (total_info[1] == 1)]
+    
+    min_thd = total_info[0, (total_info[0]) < (init_threshold-interval)][-1]
+    max_thd = total_info[0, (total_info[0]) > (init_threshold+interval)][0]
+    
+    # Threshold candidates 구하기
+    threshold_indices = np.where(((total_info[0] >= min_thd) & (total_info[0] <= max_thd)))
+    thresholds = total_info[0][threshold_indices]
+    
+    confusion = dict()
+    metrics = ['Accuracy', 'Precision', 'Recall', 
+               'Sensitivity', 'Specificity', 'F1-Score']
+    
+    opt_metrics_dict = None
+    opt_thd = None
+    
+    for thd in thresholds:
+        confusion['TP'] = (normal_loss <= thd).sum()
+        confusion['FN'] = (normal_loss > thd).sum()
+        confusion['TN'] = (abnormal_loss > thd).sum()
+        confusion['FP'] = (abnormal_loss <= thd).sum()
+        
+        metrics_dict = get_metrics(metrics, confusion=confusion)
+        
+        if opt_metrics_dict is None: # init
+            opt_metrics_dict = metrics_dict
+            opt_thd = thd
+            
+        elif metrics_dict['Accuracy'] > opt_metrics_dict['Accuracy']:
+            opt_metrics_dict = metrics_dict
+            opt_thd = thd
+    
+    return opt_metrics_dict, opt_thd, normal_loss, abnormal_loss
