@@ -6,7 +6,7 @@ import argparse
 def get_args_parser():
     parser = argparse.ArgumentParser(add_help=False)
     
-    parser.add_argument("--model", default="LSTM-AE")
+    parser.add_argument("--model", default="LSTM-AE", help="Select Model")
     
     return parser
 
