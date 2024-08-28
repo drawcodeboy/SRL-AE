@@ -18,7 +18,6 @@ def get_args_parser():
     
     # Model
     parser.add_argument("--model", default='LSTM-AE')
-    parser.add_argument("--num-attn-heads", type=int, default=None)
     
     # Dataset
     parser.add_argument("--dataset", default="ECG5000")
@@ -41,7 +40,6 @@ def print_setup(device, args):
     print(f"  |-[device]: {device}")
     print(f"\n  [MODEL]")
     print(f"  |-[model]: {args.model}")
-    print(f"  |-[num-attn-heads]: {args.num_attn_heads}")
     print(f"\n  [DATA]")
     print(f"  |-[dataset(ALL)]: {args.dataset}")
     print(f"  |-[data-root-dir(ALL)]: {args.data_root_dir}")
@@ -69,8 +67,7 @@ def main(args):
     print_setup(device, args)
     
     # Load Model
-    model = load_model(model_name=args.model,
-                       num_attn_heads=args.num_attn_heads).to(device)
+    model = load_model(model_name=args.model).to(device)
     ckpt = torch.load(os.path.join('saved/weights', args.weights_filename),
                       map_location=device, weights_only=False)
     model.load_state_dict(ckpt['model'])
