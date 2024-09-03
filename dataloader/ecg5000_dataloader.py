@@ -13,7 +13,8 @@ class ECG5000_Dataset(Dataset):
                  data_dir: str='data/ECG5000',
                  mode: str='train',
                  train_size: int=2000,
-                 val_size: int=100):
+                 val_size: int=100,
+                 preprocessing: bool=False):
         '''
         Args:
             - data_dir: Data의 Root 디렉터리
@@ -25,6 +26,7 @@ class ECG5000_Dataset(Dataset):
         self.mode = mode
         self.train_size = train_size
         self.val_size = val_size
+        self.preprocessing = preprocessing
         
         self.len = 140 # all samples length is 140, 141 is label
     
@@ -52,16 +54,16 @@ class ECG5000_Dataset(Dataset):
         
         # MaxAbs Scaling
         # 신호의 변동성 (-1, 1)을 위해서 다음과 같은 전처리를 수행
+        if self.preprocessing:
+            sample_abs = np.abs(sample)
+            max_abs = np.max(sample_abs)
+            
+            if max_abs != 0.:
+                sample = sample / max_abs
         
-        sample_abs = np.abs(sample)
-        max_abs = np.max(sample_abs)
-        
-        if max_abs != 0.:
-            sample = sample / max_abs
-        
-        # transform to tensor
-        sample = torch.tensor(sample, dtype=torch.float32).view(-1, 1)
-        target = torch.tensor(target)
+            # transform to tensor
+            sample = torch.tensor(sample, dtype=torch.float32).view(-1, 1)
+            target = torch.tensor(target)
         
         return sample, target
     
