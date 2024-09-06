@@ -75,7 +75,7 @@ def load_model(model_name:str='LSTM-AE',
                                sparsity_param=0.05,
                                sparsity_weight=1e-4)
         
-    elif model_name == 'SparDeResLSTM-AE':
+    elif model_name == 'SparDeResLSTM-AE' or model_name == 'SRL-AE': # Proposed Model
         return LSTMAutoencoder(num_layers=5,
                                in_out_dim=in_out_dim,
                                hidden_dims=[128, 64, 32, 16, 8],
