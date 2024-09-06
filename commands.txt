@@ -1,7 +1,6 @@
-# train LSTM-AE
+# train LSTM-AE (CPU), if you want train on GPU, use argument "--use-cuda"
 python train.py --model=LSTM-AE
 
-# test LSTM-AE
+# test LSTM-AE (CPU)
 python test.py --model=LSTM-AE --weights-filename=LSTM-AE_100.pth
 
-# You Need to set --num-attn-heads when using a model related to Cross-Attention
