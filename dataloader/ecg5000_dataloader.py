@@ -14,7 +14,7 @@ class ECG5000_Dataset(Dataset):
                  mode: str='train',
                  train_size: int=2000,
                  val_size: int=100,
-                 preprocessing: bool=False):
+                 preprocessing: bool=True):
         '''
         Args:
             - data_dir: Data의 Root 디렉터리

@@ -9,7 +9,7 @@ def load_dataset(dataset: str="ECG5000",
                  metadata_path: Optional[str]=None,
                  freq: Optional[int]=None, 
                  seconds: Optional[int]=None,
-                 preprocessing: bool=False):
+                 preprocessing: bool=True):
     if dataset=="ECG5000":
         return ECG5000_Dataset(data_dir=data_dir,
                                mode=mode,
