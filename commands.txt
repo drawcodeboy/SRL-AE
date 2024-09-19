@@ -2,5 +2,10 @@
 python train.py --model=LSTM-AE
 
 # test LSTM-AE (CPU)
-python test.py --model=LSTM-AE --weights-filename=LSTM-AE_100.pth
+python test.py --model=LSTM-AE --weights-filename=LSTM-AE_{epochs}.pth
 
+# train SRL-AE (CPU)
+python train.py --model=SRL-AE
+
+# test SRL-AE (CPU)
+python test.py --model=SRL-AE --weights-filename=SRL-AE_{epochs}.pth
