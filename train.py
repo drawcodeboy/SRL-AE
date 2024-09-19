@@ -94,7 +94,6 @@ def main(args):
     loss_fn = MAELoss().to(device)
     
     # Optimizer
-    p = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     
     # Scheduler
