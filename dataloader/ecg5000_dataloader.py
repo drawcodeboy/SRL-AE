@@ -14,7 +14,8 @@ class ECG5000_Dataset(Dataset):
                  mode: str='train',
                  train_size: int=2000,
                  val_size: int=100,
-                 preprocessing: bool=True):
+                 preprocessing: bool=True,
+                 verbose: bool=False):
         '''
         Args:
             - data_dir: Data의 Root 디렉터리
@@ -45,6 +46,9 @@ class ECG5000_Dataset(Dataset):
         
         self._check_and_load()
         
+        if verbose:
+            self.verbose_label()
+        
     def __len__(self):
         return len(self.data_li)
     
@@ -66,6 +70,15 @@ class ECG5000_Dataset(Dataset):
             target = torch.tensor(target)
         
         return sample, target
+    
+    def verbose_label(self):
+        label_cnt = [0 for i in range(0, 5)]
+        
+        for _, label in self.data_li:
+            label_cnt[label] += 1
+        
+        for idx, cnt in enumerate(label_cnt):
+            print(f"{idx}: {cnt:04d}")
     
     def _check_and_load(self):
         data_train = arff.loadarff(os.path.join(self.data_dir, "ECG5000_TRAIN.arff"))
