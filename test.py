@@ -1,4 +1,5 @@
 from torch.utils.data import Dataset, DataLoader
+import seaborn as sns
 
 import matplotlib.pyplot as plt
 import argparse
@@ -113,36 +114,53 @@ def main(args):
     print(f"Test Time: {test_time//60:02d}m {test_time%60:02d}s")
     print(f"<<Optimized Threshold: {opt_threshold:.6f}>>")
     print_metrics(metrics_dict)
-    
-    norm_loss2 = norm_loss[norm_loss <= opt_threshold]
-    abnorm_loss2 = abnorm_loss[abnorm_loss > opt_threshold]
 
     # Settings
     plt.figure(figsize=(12, 4))
-    plt.xlim(0, 50)
+    plt.rc('legend', fontsize=15)
+    plt.xticks([i * 10 for i in range(0, 5)], fontsize=15)
+    plt.yticks([i * 40 for i in range(0, 4)], fontsize=15)
+    # plt.rc('figure', titlesize=30)
+    plt.xlim(0, 40)
     plt.ylim(0, 120)
+    plt.grid(True, linestyle='--', color='gray', alpha=0.5)
+    
     bins=300
-    plt.hist(norm_loss, bins=bins)
-    plt.hist(abnorm_loss, bins=bins)
-    plt.title(f"{args.model} reconstruction loss")
+    plt.hist(norm_loss, bins=bins, label=f"Normal Loss Mean {np.mean(norm_loss):.3f}")
+    plt.hist(abnorm_loss, bins=bins, label=f"Abormal Loss Mean: {np.mean(abnorm_loss):.3f}")
+    plt.legend()
+    
+    if args.model == 'LSTM-AE':
+        model_title = 'LSTM Autoencoder'
+    elif args.model == 'DeResLSTM-AE':
+        model_title = 'Residual LSTM Autoencoder (Decoder Only)'
+    elif args.model == 'SparLSTM-AE':
+        model_title = 'Sparse LSTM Autoencoder (Encoder Only)'
+    elif args.model == 'SparDeResLSTM-AE':
+        model_title = 'Sparse Residual LSTM Autoencoder (SRL-AE)'
+        
+    plt.title(f"{model_title} Reconstruction Loss Distribution", fontsize=21, pad=15)
     
     # Threshold
-    plt.axvline(x=opt_threshold, color='r')
+    plt.axvline(x=opt_threshold, color='r', linewidth=2.5)
+    plt.text(opt_threshold + 0.5, 90, f"Threshold\n:{opt_threshold:.3f}", fontsize=18, color='r')
     
     # Mean Distance
-    plt.plot([np.mean(norm_loss), np.mean(abnorm_loss)], [30, 30], marker='o', color='g')
-    plt.plot([np.mean(norm_loss2), 
-              np.mean(abnorm_loss2)], [20, 20], marker='o', color='m')
+    distance_line_pos = 30
+    plt.plot([np.mean(norm_loss), np.mean(abnorm_loss)], [distance_line_pos, distance_line_pos], marker='o', color='g', linewidth=2.5)
+    plt.text(np.mean(norm_loss)+0.5, distance_line_pos+10, f"Distance\n:{abs(np.mean(abnorm_loss)-np.mean(norm_loss)):.3f}", fontsize=18, color='g')
+    
+    
+    plt.tight_layout()
     
     # Metrics
-    plt.text(35, 95, f"Optimized Loss Threshold: {opt_threshold:.6f}")
-    plt.text(35, 85, f"Normal Loss Mean: {np.mean(norm_loss):.4f}")
-    plt.text(35, 75, f"Abormal Loss Mean: {np.mean(abnorm_loss):.4f}")
-    plt.text(35, 65, f"Mean Distance(all): {abs(np.mean(abnorm_loss)-np.mean(norm_loss)):.4f}")
-    plt.text(35, 55, f"Mean Distance(threshold): {abs(np.mean(abnorm_loss2)-np.mean(norm_loss2)):.4f}")
+    text_pos = 25
+    fontsize = 12
     
-    plt.text(35, 45, f"Acc: {metrics_dict['Accuracy']*100:.4f}%")
-    plt.text(35, 35, f"F1-Score: {metrics_dict['F1-Score']*100:.4f}")
+    # plt.text(text_pos, 95, f"Optimized Loss Threshold: {opt_threshold:.6f}", fontsize=fontsize)
+    # plt.text(text_pos, 85, f"Normal Loss Mean: {np.mean(norm_loss):.4f}", fontsize=fontsize)
+    # plt.text(text_pos, 75, f"Abormal Loss Mean: {np.mean(abnorm_loss):.4f}", fontsize=fontsize)
+    # plt.text(text_pos, 65, f"Mean Distance: {abs(np.mean(abnorm_loss)-np.mean(norm_loss)):.4f}", fontsize=fontsize)
     
     if args.savefig == True:
         plt.savefig(f"figures/{args.model}_reconstruction.jpg", dpi=300)
