@@ -8,7 +8,7 @@
 ## Dataset
 * <a href="https://www.timeseriesclassification.com/description.php?Dataset=ECG5000">ECG5000 Dataset</a>
 
-<center><img src="./figures/ECG_visualization.jpg" width="70%" height="70%"></center>
+<p align="center"><img src="./figures/ECG_visualization.jpg" width="70%" height="70%"></p>
 
 ## Experiments
 ![LSTM-AE_experiment](./figures/LSTM-AE_reconstruction.jpg) | ![Residual_LSTM-AE_experiment](./figures/DeResLSTM-AE_reconstruction.jpg)
