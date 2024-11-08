@@ -61,9 +61,13 @@ class LSTMAutoencoder(nn.Module):
                                lstm_type=decoder_lstm_type,
                                dropout=dropout)
     
-    def forward(self, x):
+    def forward(self, x, latent=False):
         seq_len = x.shape[1]
         x, enc_sparsity_loss = self.encoder(x)
+        
+        if latent == True: # if you need only latent variables
+            return x
+        
         self.enc_sparsity_loss = enc_sparsity_loss
         
         x = self.decoder(x, seq_len)

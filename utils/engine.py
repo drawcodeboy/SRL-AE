@@ -165,3 +165,27 @@ def opt_threshold(init_threshold, total_loss, total_targets, interval:float=1):
             opt_thd = thd
     
     return opt_metrics_dict, opt_thd, normal_loss, abnormal_loss
+
+@torch.no_grad()
+def get_latent(model, dataloader, device):
+    model.eval()
+    
+    total_latents = []
+    total_targets = []
+    
+    for batch_idx, (batch, targets) in enumerate(dataloader, start=1):
+        batch = batch.to(device)
+        
+        latents = model(batch, latent=True).cpu().numpy()
+        targets = torch.where(targets == 0, 0, 1) # 0 = Normal, 1 = Anomaly
+        targets = targets.cpu().numpy()
+        total_latents.extend(latents)
+        total_targets.extend(targets)
+        
+        print(f"\rExtract latents: {100*batch_idx/len(dataloader):.2f}%", end="")
+    print()
+    
+    total_latents = np.array(total_latents)
+    
+    # total_latents: (N, 1, latent_dim) -> (N, latent_dim)
+    return np.array(total_latents).reshape(total_latents.shape[0], -1), np.array(total_targets)
