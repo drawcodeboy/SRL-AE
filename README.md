@@ -52,4 +52,4 @@ sis." 2024 IEEE International Conference on Consumer Electronics (ICCE). IEEE, 2
 6. ECG5000-Dataset, “http://timeseriesclassification.com/description.php?Dataset=ECG5000,“ Access Date: 2024/08/23.
 7. Wei, Yuanyuan, et al. LSTM-autoencoder-based anomaly detection for indoor air quality time-ser ies data." IEEE Sensors Journal 23.4 (2023): 3787-3800.
 8. Kim, Jaeyoung, Mostafa El-Khamy, and Jung won Lee. "Residual LSTM: Design of a deep recurrent architecture for distant speech recognition." arXiv preprint arXiv:1701.03360 (2017).
-9. Ng, Andrew. "Sparse autoencoder." CS294A Lec ture notes 72.2011 (2011): 1-19.
+9. Ng, Andrew. "Sparse autoencoder." CS294A Lecture notes 72.2011 (2011): 1-19.
