@@ -46,8 +46,8 @@
 1. Hou, Borui, et al. "LSTM-based auto-encoder model for ECG arrhythmias classification." IEEE Transactions on Instrumentation and Measurement 69.4 (2019): 1232-1240.
 2. Farady, Isack, et al. "ECG Anomaly Detection with LSTM-Autoencoder for Heartbeat Analy
 sis." 2024 IEEE International Conference on Consumer Electronics (ICCE). IEEE, 2024.
-3. Matias, Pedro, et al. "Robust Anomaly Detection in Time Series through Variational AutoEncoders and a Local Similarity Score." Biosignals. 2021.
-4. Dutta, Koustav, et al. "MED-NET: a novel approach to ECG anomaly detection using LSTMauto-encoders." International Journal of Computer Applications in Technology 65.4 (2021): 343-357.
+3. Dutta, Koustav, et al. "MED-NET: a novel approach to ECG anomaly detection using LSTM auto-encoders." International Journal of Computer Applications in Technology 65.4 (2021): 343-357.
+4. Matias, Pedro, et al. "Robust Anomaly Detection in Time Series through Variational AutoEncoders and a Local Similarity Score." Biosignals. 2021.
 5. Alamr, Abrar, and Abdelmonim Artoli. "Unsu pervised transformer-based anomaly detection in ECG signals." Algorithms 16.3 (2023): 152.
 6. ECG5000-Dataset, “http://timeseriesclassification.com/description.php?Dataset=ECG5000,“ Access Date: 2024/08/23.
 7. Wei, Yuanyuan, et al. LSTM-autoencoder-based anomaly detection for indoor air quality time-ser ies data." IEEE Sensors Journal 23.4 (2023): 3787-3800.
