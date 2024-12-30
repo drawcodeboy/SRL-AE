@@ -1,17 +1,20 @@
 # SRL-AE
 * <i>SRL-AE (<u><b>S</b></u>parse <u><b>R</u></b>esidual  <u><b>L</u></b>STM <u><b>A</u></b>uto<b>e</b>ncoder)</i>
-* Accepted, but not published yet.
-* <code>README.md</code> will be completed soon.
 
 ![SRL-AE_Model](./figures/SRL-AE%20Architecture.jpg)
 
-## Dataset
+## 📝 Paper & Description
+* Accepted, but not published yet. (Paper Link will be updated soon.)
+* <b><a href="">📌 Paper Link</a></b>
+* <a href="https://draw-code-boy.tistory.com/610">📌 Doby's Lab (Blog Description)</a>
+
+## 📁 Dataset
 * <a href="https://www.timeseriesclassification.com/description.php?Dataset=ECG5000">ECG5000 Dataset</a>
 
 <p align="center"><img src="./figures/ECG_visualization.jpg" width="70%" height="70%"></p>
 
 ## Experiment 1 (Residual LSTM)
-
+* It is interpreted that the decoder intentionally makes reconstruction difficult through residual connections, so normal data can be easily reconstructed, while abnormal data becomes difficult to reconstruct.
 <div align="center">
 
 |  | Accuracy | F1-Score | Normal Loss Mean | Loss Gap |  
@@ -26,7 +29,7 @@
 ![LSTM-AE_latent_space](./figures/Latent_Space_of_LSTM-AE.jpg) | ![Sparse_LSTM-AE_latent_space](./figures/Latent_Space_of_Sparse%20LSTM-AE.jpg)
 --- | --- |
 
-## Experiments
+## Experiments 3 (SRL-AE)
 <div align="center">
 
 |  | Accuracy | F1-Score | Normal Loss Mean | Loss Gap |  
