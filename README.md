@@ -1,5 +1,6 @@
 # SRL-AE
 * <i>SRL-AE (<u><b>S</b></u>parse <u><b>R</u></b>esidual  <u><b>L</u></b>STM <u><b>A</u></b>uto<b>e</b>ncoder)</i>
+* This study proposes a hybrid model, the Sparse Residual LSTM Autoencoder (SRL-AE), combining a Sparse Autoencoder and Residual LSTM to improve anomaly detection in electrocardiogram (ECG) data.
 
 ![SRL-AE_Model](./figures/SRL-AE%20Architecture.jpg)
 
@@ -8,6 +9,35 @@
 * <b><a href="">📌 Paper Link</a></b>
 * <a href="https://draw-code-boy.tistory.com/610">📌 Doby's Lab (Blog Description)</a>
 
+## 📝 Setting
+```
+# Clone this Repository
+git clone https://github.com/drawcodeboy/SRL-AE.git
+
+# Virtual Environment
+python -m venv .venv
+.venv\Scripts\activate # Window commands
+
+# Install Packages
+pip install -r requirements.txt
+
+# You need to download the dataset(ECG5000), and place it under the data directory.
+
+# <<Train or Test>>
+
+# train LSTM-AE (CPU), if you want train on GPU, use argument "--use-cuda"
+python train.py --model=LSTM-AE
+
+# test LSTM-AE (CPU)
+python test.py --model=LSTM-AE --weights-filename=LSTM-AE_{epochs}.pth
+
+# train SRL-AE (CPU)
+python train.py --model=SRL-AE
+
+# test SRL-AE (CPU)
+python test.py --model=SRL-AE --weights-filename=SRL-AE_{epochs}.pth
+```
+
 ## 📁 Dataset
 * <a href="https://www.timeseriesclassification.com/description.php?Dataset=ECG5000">ECG5000 Dataset</a>
 
@@ -15,6 +45,7 @@
 
 ## Experiment 1 (Residual LSTM)
 * It is interpreted that the decoder intentionally makes reconstruction difficult through residual connections, so normal data can be easily reconstructed, while abnormal data becomes difficult to reconstruct.
+
 <div align="center">
 
 |  | Accuracy | F1-Score | Normal Loss Mean | Loss Gap |  
@@ -26,10 +57,15 @@
 </div>
 
 ## Experiment 2 (Sparse Autoencoder)
+* A Sparse Autoencoder was used in the encoder to effectively extract simple patterns from normal data through sparsity constraints. This was demonstrated by conducting a quantitative evaluation using t-SNE.
+
 ![LSTM-AE_latent_space](./figures/Latent_Space_of_LSTM-AE.jpg) | ![Sparse_LSTM-AE_latent_space](./figures/Latent_Space_of_Sparse%20LSTM-AE.jpg)
 --- | --- |
 
 ## Experiments 3 (SRL-AE)
+
+* To demonstrate the robustness of the SRL-AE model, experiments were conducted with four models. All models were trained using the same method, and their performance was evaluated. Compared to the conventional LSTM Autoencoder, the SRL-AE model showed slight differences in accuracy and F1-Score but demonstrated significant improvements in robustness metrics, thereby enhancing the reliability of the model's inference results.
+
 <div align="center">
 
 |  | Accuracy | F1-Score | Normal Loss Mean | Loss Gap |  
