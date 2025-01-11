@@ -3,8 +3,5 @@ torchinfo==1.8.0
 torchsummary==1.5.1
 numpy==1.26.4
 pandas==2.2.2
-wfdb==4.1.2 # PTB-XL, not ECG5000
-ipykernel==6.29.5 # PTB-XL, not ECG5000 | Optional (Metadata search)
-jupyterlab==4.2.4 # PTB-XL, not ECG5000 | Optional (Metadata search)
 seaborn==0.13.2
 scikit-learn==1.5.2
