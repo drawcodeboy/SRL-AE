@@ -1,4 +1,4 @@
-torch==2.4.0
+torch>=2.7.1
 torchinfo==1.8.0
 torchsummary==1.5.1
 numpy==1.26.4
