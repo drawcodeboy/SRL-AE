@@ -5,8 +5,7 @@
 ![SRL-AE_Model](./figures/SRL-AE%20Architecture.jpg)
 
 ## 📝 Paper & Description
-* Accepted, but not published yet. (Paper Link will be updated soon.)
-* <b><a href="">📌 Paper Link</a></b>
+* <b><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE12036320">📌 Paper Link</a></b>
 * <a href="https://draw-code-boy.tistory.com/610">📌 Doby's Lab (Blog Description)</a>
 
 ## 📝 Setting
